@@ -3,7 +3,7 @@ import { useEffect, useRef } from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { Diagram } from "./Diagram";
-import { Bullet, Diamond, Glyph, Arrow } from "./Glyph";
+import { Bullet, Diamond, Glyph } from "./Glyph";
 import { Nav } from "./Nav";
 import { MARKETS, NET, SERVICES, TOTAL, route, pathOf, type Market } from "@/lib/net";
 
@@ -17,16 +17,22 @@ export function Hero() {
   const root = useRef<HTMLElement>(null);
   useEffect(() => {
     if (reduced()) return;
+    gsap.registerPlugin(ScrollTrigger);
     const ctx = gsap.context(() => {
       const tl = gsap.timeline({ delay: 0.15 });
       tl.from(".hero-brand > *", { y: 18, opacity: 0, duration: 0.8, stagger: 0.05, ease: "expo.out" })
         .from(".hero-hud", { opacity: 0, duration: 0.6, ease: "power2.out" }, 0.3)
         .from(".bar-inner > *", { y: 26, opacity: 0, duration: 0.9, stagger: 0.06, ease: "expo.out" }, 0.35);
 
-      /* The frame is never still and nobody notices it moving. */
-      gsap.to(".dgm", {
+      /* The frame is never still and nobody notices it moving — but it stops
+         when the hero is off screen rather than burning a tween forever. */
+      const drift = gsap.to(".dgm", {
         scale: 1.055, duration: 300, ease: "none", repeat: -1, yoyo: true,
-        transformOrigin: "50% 50%",
+        transformOrigin: "50% 50%", paused: true,
+      });
+      ScrollTrigger.create({
+        trigger: root.current!, start: "top bottom", end: "bottom top",
+        onToggle: (self) => (self.isActive ? drift.play() : drift.pause()),
       });
     }, root);
     return () => ctx.revert();
@@ -60,7 +66,7 @@ export function Hero() {
         <div className="bar-inner">
           <div className="bar-now">
             <span className="eyebrow">Belle Voyage Estates</span>
-            <span className="bar-v">Sales, letting and management — Canada, the United States, Europe</span>
+            <h1 className="bar-v">Sales, letting and management — Canada, the United States, Europe</h1>
           </div>
           <div className="bar-svc">
             {SERVICES.map((s) => s.shape === "diamond"
@@ -252,19 +258,24 @@ export function Services() {
       gsap.set(fields, { opacity: 0 });
 
       const tl = gsap.timeline({
-        scrollTrigger: { trigger: root.current!, start: "top top", end: "+=320%", pin: true, scrub: 0.6 },
+        scrollTrigger: { trigger: root.current!, start: "top top", end: "+=300%", pin: true, scrub: 0.6, invalidateOnRefresh: true },
       });
       /* One bullet per beat. Each card is fully gone before the next arrives —
          a crossfade of identical layouts just reads as a collision. */
       cards.forEach((c, i) => {
-        const at = i * 1.2;
-        tl.to(fields[i], { opacity: 1, duration: 0.35, ease: "power1.inOut" }, at)
-          .to(c, { opacity: 1, scale: 1, duration: 0.5, ease: "expo.out" }, at + 0.1)
-          .to(c, { opacity: 0, scale: 1.05, duration: 0.32, ease: "power2.in" }, at + 0.86);
-        if (i < cards.length - 1)
-          tl.to(fields[i], { opacity: 0, duration: 0.35, ease: "power1.inOut" }, at + 0.95);
-        tl.to(".sv-rail span", { opacity: (j: number) => (j === i ? 1 : 0.32), duration: 0.3 }, at);
+        const at = i * 1;
+        const last = i === cards.length - 1;
+        tl.to(fields[i], { opacity: 1, duration: 0.3, ease: "power1.inOut" }, at)
+          .to(c, { opacity: 1, scale: 1, duration: 0.42, ease: "expo.out" }, at + 0.06);
+        /* The last card holds to the end of the pin — otherwise the section
+           spends its final viewport as an empty panel. */
+        if (!last) {
+          tl.to(c, { opacity: 0, scale: 1.04, duration: 0.3, ease: "power2.in" }, at + 0.72)
+            .to(fields[i], { opacity: 0, duration: 0.3, ease: "power1.inOut" }, at + 0.8);
+        }
+        tl.to(".sv-rail span", { opacity: (j: number) => (j === i ? 1 : 0.3), duration: 0.28 }, at);
       });
+      tl.to({}, { duration: 0.35 });
     }, root);
     return () => ctx.revert();
   }, []);

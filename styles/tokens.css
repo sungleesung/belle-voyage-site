@@ -18,12 +18,11 @@
   /* One gutter. No container, no max-width, no centred column. */
   --pad:clamp(20px,4vw,72px);
   --row:calc(100dvh / 6);
-  --u:4px;
+  --u:4px;              /* the gap ladder: every gap is a multiple */
   --hair:1px;
 
   /* Cap-first type. The manual specifies cap heights, so this system does too.
      Helvetica cap ratio 0.717; sizes rounded to whole pixels. */
-  --cap-ratio:0.717;
   --t-id:clamp(38px,7.4vw,92px);
   --t-dir:clamp(26px,3.5vw,48px);
   --t-body:clamp(16px,1.35vw,20px);
@@ -45,11 +44,21 @@
   --paper:var(--black); --ink:var(--white);
   --muted:var(--grey-mid); --rule:var(--grey-deep);
   --water:#0A1116; --panel:#0B0E10;
+  /* Fields are re-authored per theme — a pastel that works on white is
+     meaningless on black, and inheriting it produces white-on-white. */
+  --ca-surface:#3E1914; --ca-wash:#2A1512; --ca-ink:#FFD6D0;
+  --us-surface:#0A3317; --us-wash:#0B1F11; --us-ink:#C8E7CC;
+  --eu-surface:#16294D; --eu-wash:#111B30; --eu-ink:#CFE0FE;
 }
 @media (prefers-color-scheme:dark){
   :root:not([data-theme="light"]){
     --paper:var(--black); --ink:var(--white);
     --muted:var(--grey-mid); --rule:var(--grey-deep);
     --water:#0A1116; --panel:#0B0E10;
+  /* Fields are re-authored per theme — a pastel that works on white is
+     meaningless on black, and inheriting it produces white-on-white. */
+  --ca-surface:#3E1914; --ca-wash:#2A1512; --ca-ink:#FFD6D0;
+  --us-surface:#0A3317; --us-wash:#0B1F11; --us-ink:#C8E7CC;
+  --eu-surface:#16294D; --eu-wash:#111B30; --eu-ink:#CFE0FE;
   }
 }

@@ -71,7 +71,7 @@ export function Board() {
         <div className="bd-b1" /><div className="bd-b2" />
         <div className="bd-b3">
           <h2>Departures</h2><span className="grow" />
-          <span className="eyebrow bd-cnt">{shown.length} of {TOTAL} shown</span>
+          <span className="eyebrow bd-cnt">Showing {shown.length} · {TOTAL} across the network</span>
         </div>
       </div>
 
@@ -79,23 +79,27 @@ export function Board() {
         <span className="eyebrow">Market</span>
         <div className="seg">
           {(Object.keys(MARKETS) as Market[]).map((k) => (
-            <button key={k} type="button" aria-pressed={mk.has(k)} onClick={() => toggle(k)}>
+            <button key={k} type="button" aria-pressed={mk.has(k)}
+              disabled={mk.size === 1 && mk.has(k)} onClick={() => toggle(k)}>
               {MARKETS[k].name}
             </button>
           ))}
         </div>
         <span className="grow" />
         <span className="eyebrow">Show in</span>
-        <div className="seg">
+        <div className="seg" role="radiogroup" aria-label="Currency">
           {Object.keys(FX).map((c) => (
-            <button key={c} type="button" aria-pressed={cur === c} onClick={() => setCur(c)}>{c}</button>
+            <button key={c} type="button" role="radio" aria-checked={cur === c}
+              onClick={() => setCur(c)}>{c}</button>
           ))}
         </div>
       </div>
 
       <div className="bd-rows">
         {shown.map((r) => (
-          <article className="bd-row" key={r.addr} data-multi={r.svc.length > 1}>
+          <a className="bd-row" key={r.addr} data-multi={r.svc.length > 1}
+            href={`#${r.addr.toLowerCase().replace(/\W+/g, "-")}`}
+            aria-label={`${r.addr}, ${r.city} — ${money(r.cad)} per month, ${r.bed} bed`}>
             <span className="bd-band" style={{ background: MARKETS[r.m].colour }} />
             <span className="bd-mk"><Bullet ch={r.m} size={28} fill={MARKETS[r.m].colour} fg="#fff"
               title={MARKETS[r.m].name} /></span>
@@ -106,7 +110,7 @@ export function Board() {
             <span className="bd-svc">
               {[...r.svc].sort().map((c) => c === "V"
                 ? <Diamond key={c} ch={c} size={23} title="Voyage" />
-                : <Bullet key={c} ch={c} size={22} title={c} />)}
+                : <Bullet key={c} ch={c} size={22} />)}
             </span>
             <span className="bd-price">{money(r.cad)}</span>
             <span className="bd-spec">{r.bed} bed · {r.ba} bath · {area(r.m2, r.m)}</span>
@@ -114,7 +118,8 @@ export function Board() {
               <i className="globe" style={{ background: r.open ? "var(--us)" : "var(--ca)" }} />
               {r.open ? "Viewings today" : "By appointment"}
             </span>
-          </article>
+            <span className="bd-go" aria-hidden="true"><Arrow dir="right" size={16} /></span>
+          </a>
         ))}
       </div>
 
@@ -153,15 +158,15 @@ export function TwoPaths() {
       <a className="pt pt-o" href="#board">
         <span className="pt-arw"><Arrow dir="down" size={26} /></span>
         <h3>I own property</h3>
-        <p>Management, tenanting, compliance and accounts. We publish our average time
-          to let, dated and per market — ask any competitor for theirs.</p>
+        <p>Management, tenanting, compliance and accounts. One manager per market,
+          one set of rules per market, and the accounts in the currency you bank in.</p>
         <span className="eyebrow">Owners →</span>
       </a>
       <a className="pt pt-r" href="#board">
         <span className="pt-arw"><Arrow dir="right" size={26} /></span>
         <h3>I am looking for somewhere</h3>
         <p>Every listing with its price, its size in the unit its market uses, and
-          whether you can see it today. No form in front of the number.</p>
+          whether you can see it today. The number comes before the form.</p>
         <span className="eyebrow">Renters and buyers →</span>
       </a>
     </section>

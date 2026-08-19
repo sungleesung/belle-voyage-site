@@ -6,23 +6,27 @@
 
 /* ── preloader ─────────────────────────────────────────────── */
 html.holding, html.holding body{overflow:hidden; height:100%;}
-.pl{position:fixed; inset:0; z-index:200; background:var(--paper);
-  display:grid; place-items:center; will-change:transform;}
+/* Hidden until JS arms it, so a failed bundle can never leave a white curtain. */
+.pl{display:none;}
+.pl--armed{position:fixed; inset:0; z-index:200; background:var(--paper);
+  display:grid; place-items:center;}
 .pl-body{display:flex; flex-direction:column; align-items:center; gap:clamp(18px,4dvh,44px);
   width:min(76vw,900px);}
 .pl-svg{width:100%; height:auto; overflow:visible;}
 .pl-line{fill:none; stroke-width:13; stroke-linecap:round; stroke-linejoin:round;}
 .pl-n{font-size:var(--t-warn); letter-spacing:.16em; text-transform:uppercase;
   color:var(--muted); font-weight:700; font-variant-numeric:tabular-nums;}
+.pl-n{border-radius:var(--r-card);}
 .pl-n span{color:var(--ink); font-size:20px; letter-spacing:-.02em; margin-right:.5em;}
 
 /* ── theme toggle ──────────────────────────────────────────── */
-.tt{position:fixed; z-index:120; right:var(--pad); top:calc(var(--pad)*.5 + 62px);
+.tt{position:absolute; z-index:12; right:var(--pad); top:calc(var(--pad)*.5 + 62px);
   background:var(--paper); color:var(--ink); border:1px solid var(--rule);
   border-radius:var(--r-tile); padding:9px 14px; cursor:pointer;
   font-size:11px; font-weight:700; letter-spacing:.1em; text-transform:uppercase;
   transition:border-color var(--t-8) var(--e-line);}
 .tt:hover{border-color:var(--ink);}
+.tt:active{transform:scale(.97); transition:transform var(--t-8) var(--e-depart);}
 
 /* ── the diagram ───────────────────────────────────────────── */
 .dgm{width:100%; height:100%; display:block;}
@@ -32,20 +36,19 @@ html.holding, html.holding body{overflow:hidden; height:100%;}
   paint-order:stroke; stroke:var(--paper); stroke-width:3px;}
 .dgm-xlab{font-size:10px; font-weight:700; letter-spacing:.13em; text-transform:uppercase;
   fill:var(--ink); paint-order:stroke; stroke:var(--paper); stroke-width:2.5px;}
-.dgm-halo{opacity:0;}
 
 /* ── 01 hero ───────────────────────────────────────────────── */
 .hero{position:relative; height:100dvh; overflow:hidden;}
 .hero-map{position:absolute; inset:0 0 var(--row) 0;}
 .hero-brand{position:absolute; top:calc(var(--pad)*.5); left:var(--pad); right:var(--pad);
   z-index:6; display:flex; align-items:center; gap:clamp(16px,3vw,46px); flex-wrap:wrap;}
-.wm{display:flex; align-items:center; gap:11px; font-weight:700;
+.wm{display:flex; align-items:center; gap:12px; font-weight:700;
   letter-spacing:-.03em; font-size:clamp(16px,1.5vw,21px);}
 .wm .ring{display:inline-block; width:.578em; height:.578em; vertical-align:-.032em; margin:0 .008em;}
 .wm .ring svg{display:block; overflow:visible;}
 .nav{display:flex; gap:clamp(8px,1.4vw,22px); flex-wrap:wrap;}
 .nav-a{display:flex; align-items:center; gap:8px; font-weight:700; font-size:14px;
-  padding:7px 11px; border-radius:var(--r-tile);
+  padding:8px 12px; border-radius:var(--r-tile);
   transition:background var(--t-8) var(--e-line);}
 .nav-a:hover{background:var(--panel);}
 .nav-a svg{transition:transform var(--t-4) var(--e-arrive);}
@@ -61,13 +64,13 @@ html.holding, html.holding body{overflow:hidden; height:100%;}
   background:var(--ink); color:var(--paper); z-index:8; display:flex; align-items:center;}
 .bar-inner{display:flex; align-items:center; gap:clamp(14px,2.4vw,38px);
   padding:0 var(--pad); width:100%;}
-.bar-now{display:flex; flex-direction:column; gap:3px; min-width:0; flex:1;}
+.bar-now{display:flex; flex-direction:column; gap:4px; min-width:0; flex:1;}
 .bar-now .eyebrow{color:inherit; opacity:.6;}
 .bar-v{font-weight:700; letter-spacing:-.025em; line-height:1.08;
   font-size:clamp(15px, calc(var(--row) * .215), 27px);}
 .bar-svc{display:flex; gap:12px; align-items:center; flex:none;}
 .hero-scroll{position:absolute; left:var(--pad); bottom:calc(var(--row) + 18px); z-index:6;
-  display:flex; align-items:center; gap:9px;}
+  display:flex; align-items:center; gap:8px;}
 .hero-scroll::after{content:""; width:44px; height:1px; background:currentColor; opacity:.5;}
 
 /* ── 02 the lines draw ─────────────────────────────────────── */
@@ -81,8 +84,9 @@ html.holding, html.holding body{overflow:hidden; height:100%;}
 /* ── 03 the wash — the signature ───────────────────────────── */
 .wash{position:relative; height:100dvh; overflow:hidden; background:var(--paper);
   display:grid; align-content:end;}
-.wash-map{position:absolute; inset:0;}
-.wash-map .dgm{will-change:transform,filter,opacity;}
+.wash-map{position:absolute; inset:0 0 21dvh 0;}
+.wash-map .dgm{opacity:.17; filter:blur(15px);}
+.motion .wash-map .dgm{opacity:1; filter:none;}
 .wash-copy{position:relative; z-index:3; padding:0 var(--pad) clamp(40px,10dvh,120px);
   display:grid; grid-template-columns:minmax(0,1.25fr) minmax(0,.75fr);
   gap:clamp(16px,3vw,60px); align-items:end;}
@@ -93,17 +97,22 @@ html.holding, html.holding body{overflow:hidden; height:100%;}
 @media(max-width:860px){.wash-copy{grid-template-columns:minmax(0,1fr);}}
 
 /* ── 04 markets ────────────────────────────────────────────── */
-.markets{height:100dvh; overflow:hidden;}
-.mk-track{display:flex; height:100%; will-change:transform;}
-.mk{flex:0 0 clamp(320px,86vw,1120px); height:100%; background:var(--field); color:var(--fink);
+.markets{overflow:visible;}
+.motion .markets{height:100dvh; overflow:hidden;}
+.mk-track{display:flex; flex-direction:column;}
+.motion .mk-track{flex-direction:row; height:100%;}
+/* Everything that makes a market panel a market panel lives here, so it holds
+   with or without motion. Only the horizontal-track sizing is gated. */
+.mk{flex:1 1 auto; min-height:78dvh; background:var(--field); color:var(--fink);
   padding:clamp(24px,6dvh,72px) var(--pad); display:flex; flex-direction:column;
-  border-right:1px solid rgba(0,0,0,.14);}
+  border-bottom:1px solid rgba(0,0,0,.14);}
+.motion .mk{flex:0 0 clamp(320px,86vw,1120px); height:100%; min-height:0;
+  border-bottom:0; border-right:1px solid rgba(0,0,0,.14);}
 .mk-head{display:flex; align-items:center; gap:clamp(12px,2vw,26px);}
 .mk-head h3{font-size:var(--t-dir); letter-spacing:-.035em;}
 .mk-head .eyebrow{color:inherit; opacity:.66;}
-.mk-mini{margin:auto 0; padding:clamp(14px,4dvh,44px) 0;}
+.mk-mini{margin:auto 0; padding:clamp(16px,4dvh,44px) 0;}
 .mk-mini svg{width:100%; height:auto; display:block; overflow:visible;}
-.mk-mini .dgm-glyph{}
 .mk-list{list-style:none; margin:0; padding:0; border-top:1px solid currentColor;}
 .mk-list li{display:grid; grid-template-columns:auto minmax(0,1.3fr) minmax(0,.7fr) auto;
   gap:clamp(10px,1.6vw,22px); align-items:center; padding:clamp(9px,1.5dvh,17px) 0;
@@ -113,28 +122,34 @@ html.holding, html.holding body{overflow:hidden; height:100%;}
 .mk-n{font-weight:700; font-variant-numeric:tabular-nums; opacity:.55;}
 
 /* ── 05 services ───────────────────────────────────────────── */
-.services{position:relative; height:100dvh; overflow:hidden; background:var(--paper);
-  display:grid; place-items:center;}
-.sv-fields{position:absolute; inset:0;}
+.services{position:relative; background:var(--paper); display:grid; place-items:center;}
+.motion .services{height:100dvh; overflow:hidden;}
+.sv-fields{position:absolute; inset:0; display:none;}
+.motion .sv-fields{display:block;}
 .sv-field{position:absolute; inset:0;}
 .f-S{background:var(--ca-wash);} .f-R{background:var(--us-wash);}
 .f-M{background:var(--eu-wash);} .f-V{background:var(--panel);}
-.sv-stack{position:relative; z-index:2; width:min(88vw,760px); height:60dvh;}
-.sv{position:absolute; inset:0; display:flex; flex-direction:column;
+.sv-stack{position:relative; z-index:2; width:min(88vw,760px);
+  display:grid; gap:clamp(32px,7dvh,72px); padding:clamp(40px,9dvh,96px) 0;}
+.motion .sv-stack{height:60dvh; display:block; padding:0;}
+.sv{display:flex; flex-direction:column;
   align-items:center; justify-content:center; gap:clamp(12px,2.2dvh,26px); text-align:center;}
+.motion .sv{position:absolute; inset:0;}
 .sv h3{font-size:var(--t-dir); letter-spacing:-.035em;}
+.sv > svg{border-radius:var(--r-cap);}
 .sv p{color:var(--muted); max-width:34ch; font-size:clamp(14px,1.2vw,18px);}
-.sv-rail{position:absolute; z-index:2; left:var(--pad); bottom:clamp(20px,5dvh,52px);
+.sv-rail{display:none; position:absolute; z-index:2; left:var(--pad); bottom:clamp(20px,5dvh,52px);
   display:flex; gap:clamp(10px,1.6vw,24px); font-size:var(--t-warn);
   letter-spacing:.14em; text-transform:uppercase; color:var(--muted); font-weight:700;}
+.motion .sv-rail{display:flex;}
 
 /* ── 06 the board ──────────────────────────────────────────── */
 .board{background:var(--paper);}
-.bd-sign{--h:clamp(96px,15dvh,146px); height:var(--h);
+.bd-sign{--h:clamp(96px,15dvh,146px); height:var(--h); border-radius:var(--r-panel);
   display:grid; grid-template-rows:calc(var(--h)*.1101) calc(var(--h)*.0092) 1fr;}
 .bd-b1{background:var(--ink);} .bd-b2{background:var(--paper);}
 .bd-b3{background:var(--ink); color:var(--paper); display:flex; align-items:center;
-  gap:18px; padding:0 var(--pad);}
+  gap:16px; padding:0 var(--pad);}
 .bd-b3 h2{font-size:clamp(21px,3.4vw,42px);}
 .grow{flex:1;}
 .bd-cnt{color:inherit; opacity:.66;}
@@ -151,31 +166,34 @@ html.holding, html.holding body{overflow:hidden; height:100%;}
 .bd-rows{border-top:1px solid var(--rule);}
 .bd-row{display:grid;
   grid-template-columns:62px minmax(0,1.3fr) minmax(0,.6fr) 132px minmax(0,.62fr) 146px;
-  column-gap:22px; align-items:center; border-bottom:1px solid var(--rule);
+  column-gap:24px; align-items:center; border-bottom:1px solid var(--rule);
   padding:0 var(--pad); min-height:76px; position:relative;
   transition:background var(--t-8) var(--e-line);}
 .bd-row:hover{background:var(--panel);}
+.bd-go{opacity:0; justify-self:end; transition:opacity var(--t-8) var(--e-line),
+  transform var(--t-4) var(--e-arrive); transform:translateX(-6px);}
+.bd-row:hover .bd-go,.bd-row:focus-visible .bd-go{opacity:.55; transform:none;}
 .bd-band{position:absolute; left:0; top:0; bottom:0; width:5px;}
 .bd-row[data-multi="true"] .bd-band{width:11px;}
-.bd-a{display:flex; align-items:center; gap:10px; min-width:0;}
+.bd-a{display:flex; align-items:center; gap:8px; min-width:0;}
 .bd-a b{letter-spacing:-.014em;}
 .bd-city{font-size:12.5px; color:var(--muted);}
-.bd-svc{display:flex; gap:5px;}
+.bd-svc{display:flex; gap:4px;}
 .bd-price{font-weight:700; font-variant-numeric:tabular-nums; letter-spacing:-.02em; text-align:right;}
 .bd-spec{font-size:12.5px; color:var(--muted); font-variant-numeric:tabular-nums;}
-.bd-stat{display:flex; align-items:center; gap:7px; font-size:12px; justify-content:flex-end;}
-.globe{width:11px; height:11px; border-radius:var(--r-globe); flex:none;}
+.bd-stat{display:flex; align-items:center; gap:8px; font-size:12px; justify-content:flex-end;}
+.globe{width:12px; height:12px; border-radius:var(--r-globe); flex:none;}
 
 .bd-legend{display:flex; gap:clamp(10px,1.8vw,26px); flex-wrap:wrap; align-items:center;
   padding:22px var(--pad) 34px; font-size:12.5px; color:var(--muted);
   border-top:1px solid var(--rule);}
-.bd-legend > span{display:inline-flex; align-items:center; gap:6px;}
+.bd-legend > span{display:inline-flex; align-items:center; gap:8px;}
 .bd-legend-note b{color:var(--ink);}
 
 /* Below 900 the board drops to two columns and the price stays. A listings board
    that hides the price on a phone is not a listings board. */
 @media(max-width:900px){
-  .bd-row{grid-template-columns:44px minmax(0,1fr); column-gap:13px; row-gap:7px;
+  .bd-row{grid-template-columns:44px minmax(0,1fr); column-gap:12px; row-gap:8px;
     padding:16px var(--pad); align-items:start; min-height:0;}
   .bd-svc,.bd-price,.bd-spec,.bd-stat{grid-column:2;}
   .bd-price{text-align:left; font-size:19px;}
@@ -189,8 +207,12 @@ html.holding, html.holding body{overflow:hidden; height:100%;}
   gap:clamp(10px,1.8dvh,20px); border-right:1px solid var(--rule);
   transition:background var(--t-4) var(--e-line);}
 .pt:last-child{border-right:0;}
+.pt .pt-arw svg{transition:transform var(--t-2) var(--e-drift);}
+.pt-o:hover .pt-arw svg{transform:translateY(5px);}
+.pt-r:hover .pt-arw svg{transform:translateX(5px);}
 .pt-o:hover{background:var(--us-wash);} .pt-r:hover{background:var(--eu-wash);}
 .pt-arw{display:block;}
+.pt{border-radius:var(--r-panel);}
 .pt h3{font-size:var(--t-dir); letter-spacing:-.035em; max-width:18ch;}
 .pt p{color:var(--muted); max-width:42ch;}
 .pt .eyebrow{margin-top:auto;}
@@ -207,8 +229,8 @@ html.holding, html.holding body{overflow:hidden; height:100%;}
 .sg-wm{display:flex; align-items:center; gap:12px; font-weight:700;
   font-size:clamp(19px,2.4vw,34px); letter-spacing:-.03em;}
 .sg-desc{opacity:.66; margin-top:12px; max-width:40ch;}
-.sg-r{display:flex; flex-direction:column; gap:10px; align-content:flex-start;}
-.sg-mk{display:flex; align-items:center; gap:11px; padding-bottom:9px;
+.sg-r{display:flex; flex-direction:column; gap:8px; align-content:flex-start;}
+.sg-mk{display:flex; align-items:center; gap:12px; padding-bottom:9px;
   border-bottom:1px solid rgba(255,255,255,.18); font-weight:700;}
 .sg-n{margin-left:auto; opacity:.6; font-variant-numeric:tabular-nums;}
 .sg-fine{background:var(--ink); color:var(--paper); opacity:.55; display:flex;
@@ -230,7 +252,7 @@ html.holding, html.holding body{overflow:hidden; height:100%;}
    Below 760 the map keeps a legible scale and the hero pans horizontally —
    which is how anyone actually reads a transit map on a phone. The pinned
    sections crop to the middle of the network instead. */
-@media(max-width:760px){
+@media(max-width:1100px){
   .hero-map{inset:0 0 var(--row) 0; overflow-x:auto; overflow-y:hidden;
     -webkit-overflow-scrolling:touch; display:flex; align-items:center;}
   .hero-map .dgm{width:1180px; min-width:1180px; height:auto; aspect-ratio:1280/700;}
@@ -240,11 +262,14 @@ html.holding, html.holding body{overflow:hidden; height:100%;}
     aspect-ratio:1280/700; max-width:none;}
 
   /* The toggle was sitting on the nav. Put it with the HUD, not over the links. */
-  .tt{top:auto; bottom:calc(var(--row) + 14px); right:var(--pad); padding:7px 11px; font-size:10px;}
-  .hero-brand{flex-direction:column; align-items:flex-start; gap:10px;}
+  .tt{top:auto; bottom:calc(var(--row) + 14px); right:var(--pad);}
+  .hero-brand{flex-direction:column; align-items:flex-start; gap:8px;}
   .hero-hud{top:calc(var(--pad)*.5);}
-  .nav{gap:2px; margin-left:-11px;}
-  .nav-a{font-size:13px; padding:6px 11px;}
+  .nav{gap:4px; margin-left:-12px;}
+  .nav-a{font-size:14px; padding:12px; min-height:44px;}
+  .seg button{min-height:44px; padding:12px 16px;}
+  .tt{min-height:44px; padding:12px 16px; font-size:11px;}
+  .sg-fine a{display:inline-block; padding:8px 0; min-height:44px;}
 
   .bar{height:auto; min-height:var(--row); padding:14px 0;}
   .bar-inner{flex-wrap:wrap; gap:12px;}

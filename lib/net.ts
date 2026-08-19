@@ -15,7 +15,7 @@ export const SERVICES = [
 
 export type Station = {
   x: number; y: number; name: string; type: StationType;
-  flag: boolean; svc: string; from: string; count: number;
+  svc: string; from: string; count: number;
   label: "above" | "below" | "right";
 };
 export type StationType = "apartment" | "house" | "building" | "short" | "student";
@@ -24,25 +24,25 @@ export type StationType = "apartment" | "house" | "building" | "short" | "studen
    octilinear router always lands on the grid. */
 export const NET: Record<Market, Station[]> = {
   CA: [
-    { x:120, y:130, name:"Vancouver", type:"apartment", flag:false, svc:"RM",   from:"$2,140", count:9,  label:"below" },
-    { x:360, y:130, name:"Calgary",   type:"house",     flag:false, svc:"SM",   from:"$1,780", count:6,  label:"below" },
-    { x:620, y:130, name:"Montréal",  type:"apartment", flag:false, svc:"RV",   from:"$1,690", count:11, label:"below" },
-    { x:800, y:190, name:"Toronto",   type:"building",  flag:true,  svc:"SRMV", from:"$2,460", count:18, label:"below" },
-    { x:1010,y:190, name:"Windsor",   type:"house",     flag:false, svc:"SR",   from:"$1,240", count:7,  label:"above" },
+    { x:120, y:130, name:"Vancouver", type:"apartment", svc:"RM",   from:"$2,140", count:9,  label:"below" },
+    { x:360, y:130, name:"Calgary",   type:"house",     svc:"SM",   from:"$1,780", count:6,  label:"below" },
+    { x:620, y:130, name:"Montréal",  type:"apartment", svc:"RV",   from:"$1,690", count:11, label:"below" },
+    { x:800, y:190, name:"Toronto",   type:"building",  svc:"SRMV", from:"$2,460", count:18, label:"below" },
+    { x:1010,y:190, name:"Windsor",   type:"house",     svc:"SR",   from:"$1,240", count:7,  label:"above" },
   ],
   US: [
-    { x:120, y:390, name:"Los Angeles", type:"building",  flag:true,  svc:"SRMV", from:"$3,310", count:21, label:"below" },
-    { x:400, y:390, name:"Chicago",     type:"apartment", flag:false, svc:"RM",   from:"$2,020", count:12, label:"below" },
-    { x:700, y:330, name:"New York",    type:"building",  flag:true,  svc:"SRMV", from:"$4,180", count:26, label:"above" },
-    { x:880, y:330, name:"Miami",       type:"short",     flag:false, svc:"V",    from:"$2,760", count:8,  label:"above" },
-    { x:1010,y:270, name:"Detroit",     type:"house",     flag:false, svc:"SRM",  from:"$1,180", count:14, label:"right" },
+    { x:120, y:390, name:"Los Angeles", type:"building",  svc:"SRMV", from:"$3,310", count:21, label:"below" },
+    { x:400, y:390, name:"Chicago",     type:"apartment", svc:"RM",   from:"$2,020", count:12, label:"below" },
+    { x:700, y:330, name:"New York",    type:"building",  svc:"SRMV", from:"$4,180", count:26, label:"above" },
+    { x:880, y:330, name:"Miami",       type:"short",     svc:"V",    from:"$2,760", count:8,  label:"above" },
+    { x:1010,y:270, name:"Detroit",     type:"house",     svc:"SRM",  from:"$1,180", count:14, label:"right" },
   ],
   EU: [
-    { x:180, y:640, name:"Lisbon",    type:"short",     flag:false, svc:"V",    from:"€1,410", count:5,  label:"below" },
-    { x:420, y:640, name:"Paris",     type:"apartment", flag:false, svc:"RV",   from:"€2,880", count:13, label:"below" },
-    { x:700, y:580, name:"London",    type:"building",  flag:true,  svc:"SRMV", from:"£3,240", count:24, label:"below" },
-    { x:940, y:580, name:"Amsterdam", type:"apartment", flag:false, svc:"RM",   from:"€2,310", count:10, label:"above" },
-    { x:1140,y:640, name:"Berlin",    type:"student",   flag:false, svc:"RM",   from:"€1,120", count:6,  label:"below" },
+    { x:180, y:640, name:"Lisbon",    type:"short",     svc:"V",    from:"€1,410", count:5,  label:"below" },
+    { x:420, y:640, name:"Paris",     type:"apartment", svc:"RV",   from:"€2,880", count:13, label:"below" },
+    { x:700, y:580, name:"London",    type:"building",  svc:"SRMV", from:"£3,240", count:24, label:"below" },
+    { x:940, y:580, name:"Amsterdam", type:"apartment", svc:"RM",   from:"€2,310", count:10, label:"above" },
+    { x:1140,y:640, name:"Berlin",    type:"student",   svc:"RM",   from:"€1,120", count:6,  label:"below" },
   ],
 };
 

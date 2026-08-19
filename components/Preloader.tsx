@@ -21,6 +21,7 @@ export function Preloader() {
       document.documentElement.classList.add("arrived");
       return;
     }
+    el.classList.add("pl--armed");
     document.documentElement.classList.add("holding");
 
     const ctx = gsap.context(() => {
@@ -37,7 +38,6 @@ export function Preloader() {
         v: TOTAL, duration: 1.6, ease: "power2.inOut",
         onUpdate: () => setN(Math.round(count.v)),
       }, 0);
-      tl.fromTo(".pl-line", { drawn: 0 }, { duration: 1.6, ease: "power2.inOut" }, 0);
       el.querySelectorAll<SVGPathElement>(".pl-line").forEach((p, i) => {
         const L = p.getTotalLength();
         gsap.set(p, { strokeDasharray: L, strokeDashoffset: L });
@@ -52,6 +52,9 @@ export function Preloader() {
 
   return (
     <div className="pl" ref={root} aria-hidden="true">
+      {/* Fail open. Without JS the curtain is never dismissed, so it must not
+          be visible in the first place. */}
+      <noscript><style>{`.pl{display:none!important}`}</style></noscript>
       <div className="pl-body">
         <svg className="pl-svg" viewBox="0 0 1000 300" preserveAspectRatio="xMidYMid meet">
           <path className="pl-line" d="M60 90 L300 90 L380 170 L620 170" stroke="var(--ca)" />

@@ -19,7 +19,8 @@ export function Bullet({ ch, fill = "var(--ink)", fg = "var(--paper)", size = 34
   { ch: string; fill?: string; fg?: string; size?: number; title?: string }) {
   const two = ch.length > 1;
   return (
-    <svg width={size} height={size} viewBox="0 0 100 100" role="img" aria-label={title ?? ch}>
+    <svg width={size} height={size} viewBox="0 0 100 100" role="img"
+      aria-label={title ?? SERVICE_NAMES[ch] ?? ch}>
       <circle cx="50" cy="50" r="50" fill={fill} />
       <text x="50" y="50" textAnchor="middle" dominantBaseline="central"
         fontFamily="Helvetica Neue,Helvetica,Arial" fontWeight="700"
@@ -33,7 +34,8 @@ export function Bullet({ ch, fill = "var(--ink)", fg = "var(--paper)", size = 34
 export function Diamond({ ch, fill = "var(--ink)", fg = "var(--paper)", size = 36, title }:
   { ch: string; fill?: string; fg?: string; size?: number; title?: string }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 100 100" role="img" aria-label={title ?? ch}>
+    <svg width={size} height={size} viewBox="0 0 100 100" role="img"
+      aria-label={title ?? SERVICE_NAMES[ch] ?? ch}>
       <rect x="16.5" y="16.5" width="67" height="67" transform="rotate(45 50 50)" fill={fill} />
       <text x="50" y="50" textAnchor="middle" dominantBaseline="central"
         fontFamily="Helvetica Neue,Helvetica,Arial" fontWeight="700"
@@ -44,12 +46,15 @@ export function Diamond({ ch, fill = "var(--ink)", fg = "var(--paper)", size = 3
 
 /* Arrow head apex 90°, per the manual. Direction is semantic: it predicts the
    move, and the page then makes it. */
+export const SERVICE_NAMES: Record<string, string> = {
+  S: "Sales", R: "Rental", M: "Management", V: "Voyage",
+  CA: "Canada", US: "United States", EU: "Europe",
+};
+
 export const ARROWS: Record<string, string> = {
   right: "M3 12h16M13 6l6 6-6 6",
   down:  "M12 3v16M6 13l6 6 6-6",
   left:  "M21 12H5M11 6l-6 6 6 6",
-  up:    "M12 21V5M18 11l-6-6-6 6",
-  back:  "M19 19 6 6M6 13V6h7",
 };
 export function Arrow({ dir = "right", size = 18 }: { dir?: keyof typeof ARROWS | string; size?: number }) {
   return (

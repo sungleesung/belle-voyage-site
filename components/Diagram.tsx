@@ -3,9 +3,8 @@ import { forwardRef } from "react";
 import { MARKETS, NET, route, pathOf, type Market } from "@/lib/net";
 import { Glyph } from "./Glyph";
 
-/* The network diagram. One SVG, reused by the hero, the draw section and the
-   wash — so the thing you scroll past is literally the same object, not a
-   picture of it. */
+/* The network diagram. Rendered independently by the hero, the draw section and
+   the wash, so each can be animated on its own timeline. */
 export const Diagram = forwardRef<SVGSVGElement, { id?: string; labels?: boolean }>(
   function Diagram({ id = "map", labels = true }, ref) {
     return (
@@ -53,8 +52,6 @@ export const Diagram = forwardRef<SVGSVGElement, { id?: string; labels?: boolean
           })}
         </g>
 
-        <g className="dgm-rings" />
-
         <g className="dgm-stations">
           {(Object.keys(NET) as Market[]).flatMap((k) =>
             NET[k].map((s) => {
@@ -65,7 +62,6 @@ export const Diagram = forwardRef<SVGSVGElement, { id?: string; labels?: boolean
               return (
                 <g key={`${k}-${s.name}`} className="dgm-stn" data-market={k} data-svc={s.svc}
                   transform={`translate(${s.x} ${s.y})`}>
-                  <circle className="dgm-halo" r="22" fill="none" stroke={MARKETS[k].colour} strokeWidth="5" />
                   <g className="dgm-glyph">
                     <g transform="translate(-12 -12)"><Glyph type={s.type} size={24} /></g>
                   </g>

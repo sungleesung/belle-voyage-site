@@ -9,7 +9,11 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
    data-lenis-prevent is a scroll trap and is never used here. */
 export function Scroll({ children }: { children: React.ReactNode }) {
   useEffect(() => {
-    if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const mq = matchMedia("(prefers-reduced-motion: reduce)");
+    if (mq.matches) return;
+    /* Layout that only makes sense while animating is gated on this class.
+       Default markup must stand on its own when the effects never run. */
+    document.documentElement.classList.add("motion");
     gsap.registerPlugin(ScrollTrigger);
 
     const lenis = new Lenis({ lerp: 0.085, wheelMultiplier: 1, allowNestedScroll: true });
@@ -20,6 +24,7 @@ export function Scroll({ children }: { children: React.ReactNode }) {
     gsap.ticker.lagSmoothing(0);
 
     return () => {
+      document.documentElement.classList.remove("motion");
       gsap.ticker.remove(raf);
       lenis.destroy();
       ScrollTrigger.getAll().forEach((t) => t.kill());
