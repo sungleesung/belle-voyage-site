@@ -1,0 +1,55 @@
+/* Belle Voyage Estates — tokens.
+   Colour derived by tools/palette.mjs in the brand-book repo. Bullets sit at the
+   equipoise luminance Y=0.179128, the one value equally far from white and black,
+   so a single value serves both themes with no variant. */
+:root{
+  --white:#FFFFFF; --black:#000000;
+
+  --grey-line:#C9D3DA; --grey-mid:#7C858C; --grey-text:#596268; --grey-deep:#333B41;
+
+  --ca:#C54E43; --ca-surface:#FFD6D0; --ca-wash:#FFE9E6; --ca-ink:#711B16; --ca-dark:#3E1914;
+  --us:#028837; --us-surface:#C8E7CC; --us-wash:#E0F3E2; --us-ink:#004719; --us-dark:#092A11;
+  --eu:#4172D1; --eu-surface:#CFE0FE; --eu-wash:#E5EFFF; --eu-ink:#16387A; --eu-dark:#142341;
+
+  --paper:var(--white); --ink:var(--black);
+  --muted:var(--grey-text); --rule:var(--grey-line);
+  --water:#E7EFF4; --panel:#F5F7F8;
+
+  /* One gutter. No container, no max-width, no centred column. */
+  --pad:clamp(20px,4vw,72px);
+  --row:calc(100dvh / 6);
+  --u:4px;
+  --hair:1px;
+
+  /* Cap-first type. The manual specifies cap heights, so this system does too.
+     Helvetica cap ratio 0.717; sizes rounded to whole pixels. */
+  --cap-ratio:0.717;
+  --t-id:clamp(38px,7.4vw,92px);
+  --t-dir:clamp(26px,3.5vw,48px);
+  --t-body:clamp(16px,1.35vw,20px);
+  --t-warn:13px;
+
+  /* One beat. Everything derives from it. */
+  --beat:800ms;
+  --t-16:50ms; --t-8:100ms; --t-4:200ms; --t-2:400ms; --t-1:800ms; --t-2x:1600ms;
+
+  --e-line:cubic-bezier(.83,0,.17,1);
+  --e-arrive:cubic-bezier(.16,1,.3,1);
+  --e-depart:cubic-bezier(.5,0,.75,0);
+  --e-drift:cubic-bezier(.37,0,.63,1);
+  /* Never cubic-bezier(.4,0,.2,1). */
+
+  --r-panel:0; --r-tile:2px; --r-card:3px; --r-water:10px; --r-globe:50%; --r-cap:999px;
+}
+:root[data-theme="dark"]{
+  --paper:var(--black); --ink:var(--white);
+  --muted:var(--grey-mid); --rule:var(--grey-deep);
+  --water:#0A1116; --panel:#0B0E10;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --paper:var(--black); --ink:var(--white);
+    --muted:var(--grey-mid); --rule:var(--grey-deep);
+    --water:#0A1116; --panel:#0B0E10;
+  }
+}

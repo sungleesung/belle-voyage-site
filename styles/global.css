@@ -1,0 +1,29 @@
+@import "./tokens.css";
+
+*{box-sizing:border-box;}
+html{scroll-behavior:auto;}
+html,body{margin:0; padding:0;}
+body{
+  background:var(--paper); color:var(--ink);
+  font-family:"Helvetica Now Text","Helvetica Neue",Helvetica,"Nimbus Sans","Liberation Sans",Arial,sans-serif;
+  font-size:var(--t-body); line-height:1.45; -webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
+}
+h1,h2,h3{margin:0; font-weight:700; letter-spacing:-.03em; line-height:.94; text-wrap:balance;}
+p{margin:0;}
+a{color:inherit; text-decoration:none;}
+button{font:inherit;}
+:focus-visible{outline:3px solid var(--eu); outline-offset:3px;}
+
+/* The manual forbids all-capitals in message copy. Small tracked uppercase is
+   used for field labels only — a stated exception, not an oversight. */
+.eyebrow{font-size:var(--t-warn); letter-spacing:.14em; text-transform:uppercase;
+  color:var(--muted); font-weight:700;}
+
+.sr{position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden;
+  clip:rect(0 0 0 0); white-space:nowrap; border:0;}
+
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important; animation-iteration-count:1!important;
+    transition-duration:.01ms!important; scroll-behavior:auto!important;}
+}
