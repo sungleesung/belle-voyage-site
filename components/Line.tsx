@@ -22,6 +22,7 @@ export function Line() {
   const svg = useRef<SVGSVGElement>(null);
   const cam = useRef<SVGGElement>(null);
   const path = useRef<SVGPathElement>(null);
+  const introPath = useRef<SVGPathElement>(null);
   const bg = useRef<HTMLDivElement>(null);
 
   /* The frame follows the viewport shape so the line is never cropped. */
@@ -56,29 +57,49 @@ export function Line() {
         cam.current?.setAttribute("transform", `translate(${x} ${y})`);
 
       /* ── the descent ─────────────────────────────────────────────
-         Someone travelling the line far too fast, then easing off it. */
+         The camera RIDES the line rather than sliding past it. Translating on
+         Y alone made the line whip across 54% of the viewport six times in
+         three seconds, because the path winds and the camera did not.
+
+         Anchoring the travelled point and easing the anchor into the landing
+         position means the ride ends exactly on frame zero — no blend, no
+         seam, no correction at the end. */
       const seen = sessionStorage.getItem("bv-arrived");
-      const intro = { v: seen ? 0 : 1 };
+      const ip = introPath.current!;
+      const IL = ip.getTotalLength();
+      const smooth = (a: number, b: number, v: number) => {
+        const t = Math.min(1, Math.max(0, (v - a) / (b - a)));
+        return t * t * (3 - 2 * t);
+      };
+      const ride = { u: seen ? 1 : 0 };
       const runIntro = () => {
-        const c = cameraAt(0);
-        /* v=1 sits at the very top of the descent; v=0 is the landing. */
-        put(c.x, c.y + intro.v * (0 - INTRO[0].y) * 1);
+        const P = ip.getPointAtLength(ride.u * IL);
+        /* Hold the travelled point mid-frame, then settle it into the exact
+           spot the landing wants it, so the two states meet seamlessly. */
+        const k = smooth(0.62, 1, ride.u);
+        put((500 + (180 - 500) * k) - P.x, (470 + (200 - 470) * k) - P.y);
       };
       runIntro();
 
       if (!seen) {
         document.documentElement.classList.add("holding");
-        gsap.to(intro, {
-          v: 0, duration: 3.6, ease: "expo.out", onUpdate: runIntro,
+        const arrive = gsap.to(ride, {
+          u: 1, duration: 3.1, ease: "power3.out", onUpdate: runIntro,
           onComplete: () => {
             sessionStorage.setItem("bv-arrived", "1");
             document.documentElement.classList.remove("holding");
           },
         });
+        /* Anyone who reaches for the scrollbar has decided not to watch it. */
+        const skip = () => arrive.duration(Math.min(arrive.duration(), arrive.time() + 0.55));
+        ["wheel", "touchstart", "keydown"].forEach((e) =>
+          addEventListener(e, skip, { once: true, passive: true }));
+
         gsap.fromTo(".ln-stop", { opacity: 0 },
-          { opacity: 1, duration: 0.5, stagger: 0.1, ease: "power2.out", delay: 2.7 });
-        gsap.fromTo(".mh", { opacity: 0 },
-          { opacity: 1, duration: 0.7, ease: "power2.out", delay: 3.1 });
+          { opacity: 1, duration: 0.55, stagger: 0.1, ease: "power2.out", delay: 2.35 });
+        const mh = document.querySelector(".mh");
+        if (mh) gsap.fromTo(mh, { opacity: 0 },
+          { opacity: 1, duration: 0.7, ease: "power2.out", delay: 2.55 });
       }
 
       /* ── the journey ─────────────────────────────────────────────
@@ -120,6 +141,8 @@ export function Line() {
       <svg ref={svg} className="ln-svg" viewBox="0 0 1000 700"
         preserveAspectRatio="xMidYMid meet" role="navigation" aria-label="Main">
         <g ref={cam}>
+          {/* Measured, never painted — it is what the camera rides. */}
+          <path ref={introPath} d={d(INTRO)} fill="none" stroke="none" />
           <path ref={path} d={d(RUN)} fill="none" stroke="var(--ca)"
             strokeWidth={STROKE} strokeLinecap="round" strokeLinejoin="round" />
 
