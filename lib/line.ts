@@ -53,6 +53,21 @@ export const REGIONS = [
 export const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 export const onDiag = (t: number): P => ({ x: lerp(A.x, B.x, t), y: lerp(A.y, B.y, t) });
 
+export function dRound(pts: P[], r = 110) {
+  if (pts.length < 3) return d(pts);
+  let out = `M${pts[0].x} ${pts[0].y}`;
+  for (let i = 1; i < pts.length - 1; i++) {
+    const p = pts[i], a = pts[i - 1], b = pts[i + 1];
+    const la = Math.hypot(a.x - p.x, a.y - p.y), lb = Math.hypot(b.x - p.x, b.y - p.y);
+    const rr = Math.min(r, la / 2, lb / 2);
+    const s1 = { x: p.x + ((a.x - p.x) / la) * rr, y: p.y + ((a.y - p.y) / la) * rr };
+    const s2 = { x: p.x + ((b.x - p.x) / lb) * rr, y: p.y + ((b.y - p.y) / lb) * rr };
+    out += ` L${s1.x.toFixed(1)} ${s1.y.toFixed(1)} Q${p.x} ${p.y} ${s2.x.toFixed(1)} ${s2.y.toFixed(1)}`;
+  }
+  const e = pts[pts.length - 1];
+  return out + ` L${e.x} ${e.y}`;
+}
+
 export const d = (pts: P[]) =>
   pts.map((p, i) => `${i ? "L" : "M"}${p.x} ${p.y}`).join(" ");
 
@@ -60,24 +75,49 @@ export const d = (pts: P[]) =>
    the journey passes through; scroll interpolates between them. */
 export const FRAMES: { at: number; x: number; y: number }[] = [
   { at: 0.00, x:    0, y:     0 },   // the landing diagonal, framed
-  { at: 0.18, x: -320, y:  -320 },   // arriving at the first corner
-  { at: 0.44, x: -640, y:  -830 },   // standing off left, all three regions in view
-  { at: 0.66, x: -640, y: -1380 },   // the second corner
-  { at: 0.78, x: -640, y: -1380 },   // held, while it changes colour
-  { at: 0.95, x:-3300, y: -1380 },   // gone, off the left
-  { at: 1.00, x:-3300, y: -1380 },
+  { at: 0.20, x: -320, y:  -320 },   // arriving at the first corner
+  { at: 0.44, x: -640, y:  -830 },   // all three regions in view
+  { at: 0.54, x: -640, y:  -960 },   // decelerating THROUGH them, never stopping
+  { at: 0.74, x: -300, y: -1380 },   // the corner, centred, opening out
+  { at: 0.80, x: -340, y: -1392 },   // a drift, so the spline never flatlines
+  { at: 1.00, x: -900, y: -1392 },   // away — 560 units of real departure
 ];
 
-export function cameraAt(p: number) {
-  for (let i = 1; i < FRAMES.length; i++) {
-    const a = FRAMES[i - 1], b = FRAMES[i];
-    if (p <= b.at) {
-      const k = (p - a.at) / (b.at - a.at);
-      return { x: lerp(a.x, b.x, k), y: lerp(a.y, b.y, k) };
-    }
+/* Monotone cubic Hermite (Fritsch–Carlson).
+   Linear interpolation makes every waypoint a velocity step — the old table
+   slammed to a stop for 561px then fired sideways at 6.3x its previous top
+   speed. Easing each segment instead would stop the camera AT every waypoint,
+   which is worse. Catmull-Rom overshoots, which an octilinear design cannot
+   have. This is C1 and provably never overshoots a keyframe. */
+function tangents(at: number[], v: number[]) {
+  const n = at.length, d: number[] = [], m: number[] = [];
+  for (let i = 0; i < n - 1; i++) d[i] = (v[i + 1] - v[i]) / (at[i + 1] - at[i]);
+  m[0] = d[0]; m[n - 1] = d[n - 2];
+  for (let i = 1; i < n - 1; i++) m[i] = d[i - 1] * d[i] <= 0 ? 0 : (d[i - 1] + d[i]) / 2;
+  for (let i = 0; i < n - 1; i++) {
+    if (d[i] === 0) { m[i] = 0; m[i + 1] = 0; continue; }
+    const a = m[i] / d[i], b = m[i + 1] / d[i], sq = a * a + b * b;
+    if (sq > 9) { const t = 3 / Math.sqrt(sq); m[i] = t * a * d[i]; m[i + 1] = t * b * d[i]; }
   }
-  const last = FRAMES[FRAMES.length - 1];
-  return { x: last.x, y: last.y };
+  return m;
+}
+const AT = FRAMES.map((f) => f.at);
+const MX = tangents(AT, FRAMES.map((f) => f.x));
+const MY = tangents(AT, FRAMES.map((f) => f.y));
+
+function hermite(i: number, p: number, v: number[], m: number[]) {
+  const h = AT[i + 1] - AT[i], t = (p - AT[i]) / h, t2 = t * t, t3 = t2 * t;
+  return (2 * t3 - 3 * t2 + 1) * v[i] + (t3 - 2 * t2 + t) * h * m[i]
+       + (-2 * t3 + 3 * t2) * v[i + 1] + (t3 - t2) * h * m[i + 1];
+}
+
+const FX = FRAMES.map((f) => f.x);
+const FY = FRAMES.map((f) => f.y);
+export function cameraAt(p: number) {
+  const q = Math.min(1, Math.max(0, p));
+  let i = 0;
+  while (i < AT.length - 2 && q > AT[i + 1]) i++;
+  return { x: hermite(i, q, FX, MX), y: hermite(i, q, FY, MY) };
 }
 
 /* The frame is a window onto path space. It must always contain this box,

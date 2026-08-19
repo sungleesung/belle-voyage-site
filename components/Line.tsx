@@ -1,11 +1,16 @@
 "use client";
-import { useEffect, useRef } from "react";
+import { useEffect, useLayoutEffect, useRef } from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import {
   RUN, ONWARD, INTRO, FLYBY, A, B, STOPS, REGIONS, STROKE,
-  onDiag, d, frame, cameraAt,
+  onDiag, d, dRound, frame, cameraAt,
 } from "@/lib/line";
+import { getLenis } from "@/lib/lenis";
+
+/* Positioning the camera must happen before the browser paints, or the first
+   frame is the landing. useLayoutEffect does; useEffect does not. */
+const useIsoLayout = typeof window !== "undefined" ? useLayoutEffect : useEffect;
 
 const reduced = () =>
   typeof window !== "undefined" && matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -23,7 +28,7 @@ export function Line() {
   const cam = useRef<SVGGElement>(null);
   const path = useRef<SVGPathElement>(null);
   const introPath = useRef<SVGPathElement>(null);
-  const bg = useRef<HTMLDivElement>(null);
+  const ink = useRef<HTMLDivElement>(null);
 
   /* The frame follows the viewport shape so the line is never cropped. */
   useEffect(() => {
@@ -40,7 +45,8 @@ export function Line() {
     return () => { ro.disconnect(); removeEventListener("resize", fit); };
   }, []);
 
-  useEffect(() => {
+  useIsoLayout(() => {
+    svg.current?.classList.add("ready");
     if (reduced()) return;
     gsap.registerPlugin(ScrollTrigger);
     document.documentElement.classList.add("motion");
@@ -48,10 +54,8 @@ export function Line() {
     const ctx = gsap.context(() => {
       const cs = getComputedStyle(document.documentElement);
       const hue = (n: string) => cs.getPropertyValue(`--${n}`).trim();
-      const RED = hue("ca") || "#C54E43";
       const BLUE = hue("eu") || "#4172D1";
       const PAPER = hue("white") || "#FFFFFF";
-      const INK = hue("black") || "#000000";
 
       const put = (x: number, y: number) =>
         cam.current?.setAttribute("transform", `translate(${x} ${y})`);
@@ -81,19 +85,20 @@ export function Line() {
         const P = ip.getPointAtLength(ride.u * IL);
         /* Hold the travelled point mid-frame, then settle it into the exact
            spot the landing wants it, so the two states meet seamlessly. */
-        const k = smooth(0.62, 1, ride.u);
+        const k = smooth(0.55, 0.94, ride.u);
         put((500 + (180 - 500) * k) - P.x, (470 + (200 - 470) * k) - P.y);
       };
       runIntro();
 
       if (!seen) {
-        document.documentElement.classList.add("holding");
+        getLenis()?.stop();
         const arrive = gsap.to(ride, {
-          u: 1, duration: 3.1, ease: "power3.out", onUpdate: runIntro,
+          u: 1, duration: 2.6, ease: "power3.out", onUpdate: runIntro,
           onComplete: () => {
             sessionStorage.setItem("bv-arrived", "1");
-            document.documentElement.classList.remove("holding");
             settle();
+            landed = true;
+            getLenis()?.start();
           },
         });
         /* Anyone who reaches for the scrollbar has decided not to watch it. */
@@ -102,36 +107,40 @@ export function Line() {
           addEventListener(e, skip, { once: true, passive: true }));
 
         gsap.fromTo(".ln-stop", { opacity: 0 },
-          { opacity: 1, duration: 0.55, stagger: 0.1, ease: "power2.out", delay: 2.35 });
+          { opacity: 1, duration: 0.55, stagger: 0.1, ease: "power2.out", delay: 1.95 });
         const mh = document.querySelector(".mh");
         if (mh) gsap.fromTo(mh, { opacity: 0 },
-          { opacity: 1, duration: 0.7, ease: "power2.out", delay: 2.55 });
+          { opacity: 1, duration: 0.6, ease: "power2.out", delay: 2.15 });
       }
 
       /* ── the journey ─────────────────────────────────────────────
          One scalar drives the camera; everything else keys off it. */
       const s = { p: 0 };
-      const move = () => { const c = cameraAt(s.p); put(c.x, c.y); };
+      let landed = !!seen;
+      const move = () => { if (!landed) return; const c = cameraAt(s.p); put(c.x, c.y); };
 
       const tl = gsap.timeline({
         scrollTrigger: {
-          trigger: root.current!, start: "top top", end: "+=520%",
-          pin: true, scrub: 0.85, invalidateOnRefresh: true,
+          trigger: root.current!, start: "top top", end: "+=420%",
+          pin: true, scrub: 0.35, invalidateOnRefresh: true,
         },
       });
 
-      tl.to(s, { p: 1, duration: 10, ease: "none", onUpdate: move }, 0)
-        /* The landing's stops belong to the diagonal and leave with it. */
-        .fromTo(".ln-stop", { opacity: 1 }, { opacity: 0, duration: 1, ease: "power1.out" }, 1.2)
-        /* Into the regions: the ground goes black and the line goes white. */
-        .to(bg.current!, { backgroundColor: INK, duration: 1.6, ease: "power1.inOut" }, 2.1)
-        .to(path.current!, { stroke: PAPER, duration: 1.6, ease: "power1.inOut" }, 2.1)
+      tl.to(s, { p: 1, duration: 10, ease: "none", onUpdate: move, immediateRender: false }, 0)
+        /* The black wipes down over the ground, and the line flips colour as
+           the edge crosses it — so the change reads as caused by the wipe. */
+        .to(ink.current!, { clipPath: "inset(0 0 0% 0)", duration: 0.9, ease: "power2.inOut" }, 2.1)
+        .to(path.current!, { stroke: PAPER, duration: 0.28, ease: "power1.inOut" }, 2.62)
+        /* All three regions reach full before the frame that shows them all. */
         .fromTo(".ln-region", { opacity: 0 },
-          { opacity: 1, duration: 0.9, stagger: 0.35, ease: "power2.out" }, 3.4)
-        /* Out of the regions: back to paper, and the line turns blue. */
-        .to(".ln-region", { opacity: 0, duration: 0.6, ease: "power1.in" }, 5.6)
-        .to(bg.current!, { backgroundColor: PAPER, duration: 1.5, ease: "power1.inOut" }, 5.9)
-        .to(path.current!, { stroke: BLUE, duration: 1.5, ease: "power1.inOut" }, 5.9);
+          { opacity: 1, duration: 0.7, stagger: 0.25, ease: "power2.out" }, 2.9)
+        /* The wipe carries on downward and takes the black with it. */
+        .to(ink.current!, { clipPath: "inset(100% 0 0 0)", duration: 0.9, ease: "power2.inOut" }, 5.9)
+        .to(path.current!, { stroke: BLUE, duration: 0.28, ease: "power1.inOut" }, 6.42)
+        /* Canada and the United States ride off the top under the camera —
+           that is what "the camera carries them off" should mean. Only Europe
+           never leaves the frame, so only Europe needs a fade. */
+        .to(".ln-region-EU", { opacity: 0, duration: 0.5, ease: "power1.in" }, 6.1);
     }, root);
 
     return () => {
@@ -143,12 +152,13 @@ export function Line() {
   return (
     <>
     <div className="ln" ref={root}>
-      <div className="ln-bg" ref={bg} />
+      <div className="ln-bg" />
+      <div className="ln-ink" ref={ink} />
       <svg ref={svg} className="ln-svg" viewBox="0 0 1000 700"
         preserveAspectRatio="xMidYMid meet" role="navigation" aria-label="Main">
         <g ref={cam}>
           {/* Measured, never painted — it is what the camera rides. */}
-          <path ref={introPath} d={d(INTRO)} fill="none" stroke="none" />
+          <path ref={introPath} d={dRound(INTRO)} fill="none" stroke="none" />
           <path ref={path} d={d(RUN)} fill="none" stroke="var(--ca)"
             strokeWidth={STROKE} strokeLinecap="round" strokeLinejoin="round" />
 
@@ -174,7 +184,7 @@ export function Line() {
 
           {/* the regions — colours, because these ARE the regions */}
           {REGIONS.map((r) => (
-            <g key={r.code} className="ln-region" transform={`translate(${B.x} ${r.y})`}>
+            <g key={r.code} className={`ln-region ln-region-${r.code}`} transform={`translate(${B.x} ${r.y})`}>
               <a href={r.href} aria-label={`Properties in ${r.name}`}>
                 <circle r="34" fill={r.colour} stroke="var(--white)" strokeWidth="8" />
                 <rect className="ln-plate" x="78" y="-46" width="430" height="92" rx="3" />

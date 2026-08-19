@@ -24,6 +24,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" suppressHydrationWarning>
       <body>
+        <noscript><style>{`.ln-svg{opacity:1!important}`}</style></noscript>
         <script dangerouslySetInnerHTML={{ __html: BOOT }} />
         {children}
       </body>

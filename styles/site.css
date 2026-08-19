@@ -37,7 +37,13 @@
 /* ── the line ──────────────────────────────────────────────── */
 .ln{position:relative; height:100dvh; overflow:hidden;}
 .ln-bg{position:absolute; inset:0; background:var(--paper);}
-.ln-svg{position:absolute; inset:0; width:100%; height:100%; display:block;}
+/* The regions act is canonically black. In a dark theme this wipes black over
+   black — invisible, harmless, and the pin still ends on --paper so it meets
+   the contact section without a cut. */
+.ln-ink{position:absolute; inset:0; background:#000; clip-path:inset(0 0 100% 0);}
+.ln-svg{position:absolute; inset:0; width:100%; height:100%; display:block;
+  opacity:0; transition:opacity 1ms;}
+.ln-svg.ready{opacity:1;}
 .ln-svg a{cursor:pointer;}
 
 .ln-lab{font-size:44px; font-weight:700; letter-spacing:-.03em; fill:var(--ink);
@@ -61,7 +67,6 @@
 .ln-region a:focus-visible .ln-rname{fill:var(--black);}
 .ln-region a:focus-visible .ln-arw{stroke:var(--black);}
 
-html.holding, html.holding body{overflow:hidden;}
 
 /* Shown only when the journey cannot run. */
 .ln-fallback{display:grid; border-top:1px solid var(--rule);}
