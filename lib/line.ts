@@ -34,6 +34,7 @@ export const C: P = { x: 820, y: 1900 };  // the second corner
 export const D: P = { x: -1400, y: 1900 };
 
 export const RUN: P[] = [...INTRO, B, C, D];
+export const ONWARD: P[] = [{ x: A.x, y: A.y - 260 }, A, B, C, D];
 
 /* Three stops on the diagonal. Shapes, not colours — this is navigation. */
 export const STOPS = [
@@ -82,7 +83,7 @@ export function cameraAt(p: number) {
 /* The frame is a window onto path space. It must always contain this box,
    whatever shape the viewport is — and it is deliberately tight, so the line
    reads as something you are standing close to. */
-const SAFE = { x: 110, y: 170, w: 780, h: 700 };
+const SAFE = { x: 100, y: 170, w: 880, h: 700 };
 export function frame(w: number, h: number) {
   const ar = Math.max(w, 1) / Math.max(h, 1);
   const safeAr = SAFE.w / SAFE.h;

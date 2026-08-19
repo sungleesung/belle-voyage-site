@@ -3,7 +3,7 @@ import { useEffect, useRef } from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import {
-  RUN, INTRO, FLYBY, A, B, STOPS, REGIONS, STROKE,
+  RUN, ONWARD, INTRO, FLYBY, A, B, STOPS, REGIONS, STROKE,
   onDiag, d, frame, cameraAt,
 } from "@/lib/line";
 
@@ -71,7 +71,12 @@ export function Line() {
         const t = Math.min(1, Math.max(0, (v - a) / (b - a)));
         return t * t * (3 - 2 * t);
       };
+      const settle = () => {
+        path.current?.setAttribute("d", d(ONWARD));
+        gsap.set(".ln-flyby", { opacity: 0 });
+      };
       const ride = { u: seen ? 1 : 0 };
+      if (seen) settle();
       const runIntro = () => {
         const P = ip.getPointAtLength(ride.u * IL);
         /* Hold the travelled point mid-frame, then settle it into the exact
@@ -88,6 +93,7 @@ export function Line() {
           onComplete: () => {
             sessionStorage.setItem("bv-arrived", "1");
             document.documentElement.classList.remove("holding");
+            settle();
           },
         });
         /* Anyone who reaches for the scrollbar has decided not to watch it. */
@@ -148,7 +154,7 @@ export function Line() {
 
           {/* stops that fly past on the way down */}
           {FLYBY.map((p, i) => (
-            <circle key={i} cx={p.x} cy={p.y} r="19" fill="var(--paper)"
+            <circle key={i} className="ln-flyby" cx={p.x} cy={p.y} r="19" fill="var(--paper)"
               stroke="var(--ink)" strokeWidth="8" />
           ))}
 
