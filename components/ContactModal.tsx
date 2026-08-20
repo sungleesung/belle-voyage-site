@@ -58,13 +58,13 @@ export function ContactModal() {
           inside it their outer halves were being sliced off at the edge. */}
       <div className="cm-wrap">
         <div className="cm-frame">
+          <button className="cm-x" type="button" onClick={() => setView(null)}>
+            <span className="sr">Close</span>
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path d="M5 5 19 19M19 5 5 19" />
+            </svg>
+          </button>
           <div className="cm-panel">
-            <button className="cm-x" type="button" onClick={() => setView(null)}>
-              <span className="sr">Close</span>
-              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                <path d="M5 5 19 19M19 5 5 19" />
-              </svg>
-            </button>
             <h2 id="cm-title">Get in touch</h2>
             <EnquiryForm />
           </div>

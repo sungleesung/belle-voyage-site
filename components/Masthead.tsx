@@ -11,6 +11,12 @@ const LEGAL = [
   { label: "Site map",         href: "/sitemap" },
 ];
 
+/* Reading sessionStorage THROWS, not returns null, when the browser is set to
+   block storage — and this runs in an effect, so the throw takes the app down. */
+const arrived = () => {
+  try { return !!sessionStorage.getItem("bv-arrived"); } catch { return false; }
+};
+
 export function Masthead() {
   const [view, setLocal] = useState<View>(getView());
   const open = view === "menu";
@@ -25,7 +31,7 @@ export function Masthead() {
        the overlay. Only stopping it does. Restart is gated on the intro having
        landed, or an overlay opened mid-intro would hand scrolling back early. */
     if (view) getLenis()?.stop();
-    else if (sessionStorage.getItem("bv-arrived")) getLenis()?.start();
+    else if (arrived()) getLenis()?.start();
     return () => { removeEventListener("keydown", esc);
       document.documentElement.classList.remove("menu-open"); };
   }, [view]);

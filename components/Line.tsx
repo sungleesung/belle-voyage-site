@@ -9,7 +9,7 @@ import {
 } from "@/lib/line";
 import type { P } from "@/lib/line";
 import { getLenis } from "@/lib/lenis";
-import { openContact } from "@/lib/overlay";
+import { getView, openContact } from "@/lib/overlay";
 
 /* Positioning the camera must happen before the browser paints, or the first
    frame is the landing. useLayoutEffect does; useEffect does not. */
@@ -145,7 +145,10 @@ export function Line() {
             landed = true;
             reframe.current = null;
             drop();
-            getLenis()?.start();
+            /* The masthead is reachable during the intro, so an overlay can
+               already be open by the time this fires. Starting Lenis anyway
+               scrolled the page behind it. */
+            if (!getView()) getLenis()?.start();
           },
         });
         open
@@ -163,9 +166,15 @@ export function Line() {
              still on screen at the landing, they sat there and then vanished in
              a single frame. */
           .to(".ln-flyby", { opacity: 0, duration: 0.5, ease: "power2.in" }, 3.25);
-        const mh = document.querySelector(".mh");
-        if (mh) open.fromTo(mh, { opacity: 0 },
-          { opacity: 1, duration: 0.6, ease: "power2.out" }, 3.30);
+        const mh = document.querySelector<HTMLElement>(".mh");
+        if (mh) {
+          /* opacity 0 does not stop a click or a Tab. Same fault as the region
+             links: an invisible control that still works. */
+          mh.inert = true;
+          open.fromTo(mh, { opacity: 0 },
+            { opacity: 1, duration: 0.6, ease: "power2.out" }, 3.30)
+            .set(mh, { inert: false }, 3.30);
+        }
 
         /* Anyone who reaches for the scrollbar has decided not to watch it —
            so land 0.55s from the input, whenever it lands. A fixed timeScale
