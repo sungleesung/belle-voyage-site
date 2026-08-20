@@ -28,6 +28,7 @@ export function Line() {
   const svg = useRef<SVGSVGElement>(null);
   const cam = useRef<SVGGElement>(null);
   const path = useRef<SVGPathElement>(null);
+  const gulp = useRef<SVGPathElement>(null);
   const introPath = useRef<SVGPathElement>(null);
   const sheet = useRef<HTMLDivElement>(null);
 
@@ -118,7 +119,7 @@ export function Line() {
 
       const tl = gsap.timeline({
         scrollTrigger: {
-          trigger: root.current!, start: "top top", end: "+=320%",
+          trigger: root.current!, start: "top top", end: "+=280%",
           pin: true, scrub: 0.35, invalidateOnRefresh: true,
         },
       });
@@ -136,9 +137,27 @@ export function Line() {
         .fromTo(".ln-head", { opacity: 0 }, { opacity: 1, duration: 0.6, ease: "power2.out" }, 2.8)
         .fromTo(".ln-region", { opacity: 0 },
           { opacity: 1, duration: 0.7, stagger: 0.25, ease: "power2.out" }, 3.0)
-        .to(".ln-region, .ln-head", { opacity: 0, duration: 0.5, ease: "power1.in" }, 6.2)
-        /* The line keeps descending, then grows until there is nothing else. */
-        .to(path.current!, { strokeWidth: 3600, duration: 1.8, ease: "power2.in" }, 7.5);
+        /* Nothing is dismissed. The line keeps descending and then grows until
+           it has taken the regions and the rest of the frame with it. */
+        .to(gulp.current!, {
+          strokeWidth: () => {
+            const vb = svg.current!.viewBox.baseVal;
+            const cam = cameraAt(1);
+            const right = vb.x + vb.width;
+            /* Where the path crosses the top of the frame: still on the
+               diagonal if the frame is tall enough to reach it. */
+            const topPathY = vb.y - cam.y;
+            const onDiag = topPathY > A.y && topPathY < B.y;
+            const xTop = (onDiag ? A.x + (topPathY - A.y) : B.x) + cam.x;
+            const xVert = B.x + cam.x;
+            const need = Math.max(
+              xVert - vb.x, right - xVert,
+              xTop - vb.x, right - xTop,
+            );
+            return Math.ceil(need * 2 * 1.06);
+          },
+          duration: 1.8, ease: "power2.in",
+        }, 8.2);
     }, root);
 
     return () => {
@@ -197,6 +216,10 @@ export function Line() {
               </a>
             </g>
           ))}
+
+          {/* Paints last, so what it grows over includes the regions. */}
+          <path ref={gulp} d={d(ONWARD)} fill="none" stroke="#000" strokeWidth="0"
+            strokeLinecap="round" strokeLinejoin="round" />
         </g>
       </svg>
     </div>

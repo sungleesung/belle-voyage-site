@@ -98,7 +98,7 @@ html.menu-open, html.menu-open body{overflow:hidden;}
 /* ── contact ───────────────────────────────────────────────── */
 .ct{min-height:100dvh; background:#000; color:#fff; display:flex; flex-direction:column;}
 .ct ::selection{background:#fff; color:#000;}
-.ct-inner{flex:1; padding:clamp(22px,5dvh,52px) var(--pad) clamp(32px,7dvh,72px);
+.ct-inner{flex:1; padding:clamp(8px,1.6dvh,20px) var(--pad) clamp(32px,7dvh,72px);
   display:flex; flex-direction:column; gap:clamp(28px,6dvh,64px);}
 .ct h2{font-size:clamp(40px,8vw,104px); letter-spacing:-.045em;}
 
