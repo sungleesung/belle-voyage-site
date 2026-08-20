@@ -9,20 +9,37 @@
 
 export type P = { x: number; y: number };
 
-/* ── the descent, travelled at speed ─────────────────────────── */
+/* ── the descent ──────────────────────────────────────────────
+   Straight down, one detour left, then straight down onto A. The opening
+   frame is the INSIDE of this line — the camera starts pushed so far in that
+   the stroke alone fills the screen — so the path needs length above the
+   camera as well as below it, or the top of the frame has nothing in it. */
 export const INTRO: P[] = [
-  { x: 700, y: -3200 }, { x: 700, y: -2960 },
-  { x: 420, y: -2680 }, { x: 420, y: -2440 },
-  { x: 760, y: -2100 }, { x: 760, y: -1860 },
-  { x: 400, y: -1500 }, { x: 400, y: -1260 },
-  { x: 780, y:  -880 }, { x: 780, y:  -640 },
-  { x: 420, y:  -280 }, { x: 420, y:  -100 },
-  { x: 180, y:   140 }, { x: 180, y:   200 },
+  { x: 420, y: -5100 },   // lead-in, always off-frame above
+  { x: 420, y: -1500 },   // the long straight run
+  { x: 180, y: -1260 },   // the detour, one 45 degree jog left
+  { x: 180, y:   200 },   // down onto A, where the landing begins
 ];
-/* Stops that fly past on the way down. */
+/* Where the camera sits before it moves, and how far along INTRO that is.
+   The lead-in is a single straight segment, so this length is exact.
+
+   It has to clear the top of the frame at 1x, and the frame that matters is a
+   phone in portrait: 1904 units tall against a laptop's 700. The line's topmost
+   pixel sits at frame y 470 - LEAD - 17 and the frame top is 520 - 440/ar, so
+   the lead only clears when LEAD > 440/ar - 67. At 600 it cleared only down to
+   aspect 0.66 — every phone in portrait showed the line stopping dead in a
+   rounded cap a sixth of the way down, with nothing above it. 1900 clears to
+   aspect 0.224, past anything that exists. */
+export const LEAD = 1900;
+
+/* Stops passed on the way down. All on the straight runs — a station on a
+   corner reads as a mistake. */
 export const FLYBY: P[] = [
-  { x: 420, y: -2440 }, { x: 760, y: -1860 },
-  { x: 400, y: -1260 }, { x: 780, y:  -640 }, { x: 420, y: -100 },
+  /* The first one sits close enough to the camera's resting point to arrive
+     as the pull-back finishes, so the reveal lands on a station rather than on
+     bare line — on a short frame as well as a tall one. */
+  { x: 420, y: -2900 }, { x: 420, y: -2350 }, { x: 420, y: -1800 },
+  { x: 180, y:  -950 }, { x: 180, y:  -400 },
 ];
 
 /* ── the landing: the diagonal you arrive on ─────────────────── */
@@ -32,7 +49,10 @@ export const B: P = { x: 820, y: 840 };   // the first corner
 export const C: P = { x: 820, y: 4200 };  // the foot of the vertical
 
 export const RUN: P[] = [...INTRO, B, C];
-export const ONWARD: P[] = [{ x: A.x, y: A.y - 260 }, A, B, C];
+/* The lead above A obeys the same rule as LEAD: at 260 the landing showed a
+   rounded line-end a fifth of the way down a portrait frame. Off-frame on a
+   laptop either way, so this is only ever visible on a phone. */
+export const ONWARD: P[] = [{ x: A.x, y: A.y - 1700 }, A, B, C];
 
 /* Three stops on the diagonal. Shapes, not colours — this is navigation. */
 export const STOPS = [
@@ -153,3 +173,14 @@ export function frame(w: number, h: number) {
 }
 
 export const STROKE = 34;   /* thick. we are close to it. */
+
+/* The opening is the inside of the line: how far in the camera has to be
+   pushed for the stroke alone to reach both edges of the frame. Derived from
+   the live viewport rather than fixed, so it is right on an ultrawide as well
+   as a phone — and so it self-corrects if the window changes mid-intro. */
+export const INTRO_ANCHOR = { x: 500, y: 470 };
+export function introZoom(w: number, h: number) {
+  const f = frame(w, h);
+  const reach = Math.max(INTRO_ANCHOR.x - f.x, f.x + f.w - INTRO_ANCHOR.x);
+  return (reach * 2 * 1.06) / STROKE;
+}

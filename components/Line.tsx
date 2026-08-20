@@ -3,7 +3,8 @@ import { useEffect, useLayoutEffect, useRef } from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import {
-  RUN, ONWARD, INTRO, FLYBY, A, B, C, STOPS, REGIONS, STROKE,
+  RUN, ONWARD, INTRO, FLYBY, LEAD, INTRO_ANCHOR, introZoom,
+  A, B, C, STOPS, REGIONS, STROKE,
   onDiag, d, dRound, frame, cameraAt, capPan, REGIONS_TITLE_Y,
 } from "@/lib/line";
 import type { P } from "@/lib/line";
@@ -33,6 +34,9 @@ export function Line() {
   const introPath = useRef<SVGPathElement>(null);
   const sheet = useRef<HTMLDivElement>(null);
   const capped = useRef(false);
+  /* Set while the intro owns the camera, so a resize re-derives it. Null after
+     the intro hands over, because then the scroll owns the camera. */
+  const reframe = useRef<(() => void) | null>(null);
 
   /* The frame follows the viewport shape so the line is never cropped. */
   useEffect(() => {
@@ -42,6 +46,11 @@ export function Line() {
       capped.current = capPan(r.width, r.height);
       const f = frame(r.width, r.height);
       el.setAttribute("viewBox", `${f.x} ${f.y} ${f.w} ${f.h}`);
+      /* The intro's depth is derived from the viewport. During the held beat
+         nothing is tweening, so without this a rotation leaves the camera at a
+         scale computed for the old frame and the red no longer reaches the
+         edges. */
+      reframe.current?.();
     };
     fit();
     const ro = new ResizeObserver(fit);
@@ -64,17 +73,26 @@ export function Line() {
 
     const ctx = gsap.context(() => {
 
-      const put = (x: number, y: number) =>
-        cam.current?.setAttribute("transform", `translate(${x} ${y})`);
+      const put = (x: number, y: number, k = 1) =>
+        cam.current?.setAttribute("transform",
+          k === 1 ? `translate(${x} ${y})` : `translate(${x} ${y}) scale(${k})`);
 
-      /* ── the descent ─────────────────────────────────────────────
-         The camera RIDES the line rather than sliding past it. Translating on
-         Y alone made the line whip across 54% of the viewport six times in
-         three seconds, because the path winds and the camera did not.
+      /* ── the opening ─────────────────────────────────────────────
+         The camera does not start beside the line, it starts INSIDE it —
+         pushed in far enough that the stroke alone is the whole screen, so the
+         first frame is a red field carrying the mark. Pulling back out is the
+         exact inverse of the swallow that closes the sequence: there the line
+         grows until it takes the frame, here the frame retreats until the line
+         is a line again. The pull-back is also what reveals the stops and the
+         detour, so they arrive by being approached rather than by fading in.
 
-         Anchoring the travelled point and easing the anchor into the landing
-         position means the ride ends exactly on frame zero — no blend, no
-         seam, no correction at the end. */
+         Then the camera RIDES the line down. Translating on Y alone made the
+         line whip across the viewport, because the path turns and the camera
+         did not. Anchoring the travelled point and easing that anchor into the
+         landing position means the ride ends exactly on frame zero — no blend,
+         no seam, no correction at the end. */
+      /* Assigned only if the intro actually arms. Runs on ctx.revert(). */
+      let closeIntro = () => {};
       const seen = sessionStorage.getItem("bv-arrived");
       const ip = introPath.current!;
       const IL = ip.getTotalLength();
@@ -82,42 +100,85 @@ export function Line() {
         const t = Math.min(1, Math.max(0, (v - a) / (b - a)));
         return t * t * (3 - 2 * t);
       };
+      /* The anchor slides home over the last stretch, measured in path units
+         still to run rather than as a fraction of u — so it stays tied to the
+         detour and to A, and does not drift when the path length changes. It
+         begins as the detour arrives and ends just short of A, which makes the
+         turn and the settle read as one move. */
+      const SLIDE_FROM = 1850, SLIDE_TO = 245;
       const settle = () => {
         path.current?.setAttribute("d", d(ONWARD));
         gsap.set(".ln-flyby", { opacity: 0 });
       };
-      const ride = { u: seen ? 1 : 0 };
+      /* z is how far in the camera still is: 1 inside the stroke, 0 out. Kept
+         as a fraction, not a scale, so a window change mid-intro re-derives
+         the depth instead of leaving a gap at the edge of the frame. */
+      const intro = { u: seen ? 1 : LEAD / IL, z: seen ? 0 : 1 };
       if (seen) settle();
       const runIntro = () => {
-        const P = ip.getPointAtLength(ride.u * IL);
-        /* Hold the travelled point mid-frame, then settle it into the exact
-           spot the landing wants it, so the two states meet seamlessly. */
-        const k = smooth(0.55, 0.94, ride.u);
-        put((500 + (180 - 500) * k) - P.x, (470 + (200 - 470) * k) - P.y);
+        const P = ip.getPointAtLength(intro.u * IL);
+        /* Geometric, not linear. Interpolating the scale itself spends most
+           of the time barely moving and then rushes the last of it, because
+           what the eye reads is the RATE of expansion (dk/k), not dk. Raising
+           the depth to the power of z makes that rate constant, so the
+           pull-back is even the whole way out. */
+        const k = Math.pow(introZoom(window.innerWidth, window.innerHeight), intro.z);
+        const a = smooth(1 - SLIDE_FROM / IL, 1 - SLIDE_TO / IL, intro.u);
+        put((INTRO_ANCHOR.x + (A.x - INTRO_ANCHOR.x) * a) - k * P.x,
+            (INTRO_ANCHOR.y + (A.y - INTRO_ANCHOR.y) * a) - k * P.y, k);
       };
       runIntro();
 
       if (!seen) {
         getLenis()?.stop();
-        const arrive = gsap.to(ride, {
-          u: 1, duration: 2.9, ease: "power2.out", onUpdate: runIntro,
+        reframe.current = runIntro;
+        gsap.set(".ln-box-panel", { opacity: 1 });
+        gsap.set(".ln-flyby", { opacity: 1 });
+        /* once:true would only ever remove the one that fired. */
+        const EVS = ["wheel", "touchstart", "keydown"] as const;
+        const drop = () => EVS.forEach((e) => removeEventListener(e, skip));
+        const open = gsap.timeline({
           onComplete: () => {
             sessionStorage.setItem("bv-arrived", "1");
             settle();
             landed = true;
+            reframe.current = null;
+            drop();
             getLenis()?.start();
           },
         });
-        /* Anyone who reaches for the scrollbar has decided not to watch it. */
-        const skip = () => arrive.duration(Math.min(arrive.duration(), arrive.time() + 0.55));
-        ["wheel", "touchstart", "keydown"].forEach((e) =>
-          addEventListener(e, skip, { once: true, passive: true }));
-
-        gsap.fromTo(".ln-stop", { opacity: 0 },
-          { opacity: 1, duration: 0.55, stagger: 0.1, ease: "power2.out", delay: 2.15 });
+        open
+          /* Held a beat before anything moves: the mark is the whole screen,
+             and it should be allowed to be. */
+          .to(".ln-box-panel", { opacity: 0, scale: 0.88, duration: 0.55, ease: "power2.in" }, 0.40)
+          .to(intro, { z: 0, duration: 1.35, ease: "power2.inOut", onUpdate: runIntro }, 0.45)
+          .to(intro, { u: 1, duration: 1.95, ease: "power2.inOut", onUpdate: runIntro }, 1.80)
+          .fromTo(".ln-stop", { opacity: 0 },
+            { opacity: 1, duration: 0.55, stagger: 0.1, ease: "power2.out" }, 3.10)
+          /* The stops passed on the way down belong to the descent, so they go
+             out with it — landing exactly when the camera stops. settle() hides
+             them too, but that runs on the timeline's completion, 150ms later:
+             long enough that on a portrait frame, where the lowest of them is
+             still on screen at the landing, they sat there and then vanished in
+             a single frame. */
+          .to(".ln-flyby", { opacity: 0, duration: 0.5, ease: "power2.in" }, 3.25);
         const mh = document.querySelector(".mh");
-        if (mh) gsap.fromTo(mh, { opacity: 0 },
-          { opacity: 1, duration: 0.6, ease: "power2.out", delay: 2.4 });
+        if (mh) open.fromTo(mh, { opacity: 0 },
+          { opacity: 1, duration: 0.6, ease: "power2.out" }, 3.30);
+
+        /* Anyone who reaches for the scrollbar has decided not to watch it —
+           so land 0.55s from the input, whenever it lands. A fixed timeScale
+           made that depend on where in the intro they reached, which on an
+           early skip was over two seconds. */
+        const skip = () => {
+          const left = open.duration() - open.time();
+          if (left > 0.55) open.timeScale(left / 0.55);
+          drop();
+        };
+        EVS.forEach((e) => addEventListener(e, skip, { passive: true }));
+        /* Unmounting mid-intro would otherwise leave three window listeners
+           attached and Lenis stopped — a page that can never scroll again. */
+        closeIntro = () => { drop(); if (!landed) getLenis()?.start(); };
       }
 
       /* ── the journey ─────────────────────────────────────────────
@@ -187,9 +248,11 @@ export function Line() {
           },
           duration: 1.8, ease: "power2.in",
         }, 8.2);
+      return () => closeIntro();
     }, root);
 
     return () => {
+      reframe.current = null;
       ctx.revert();
       document.documentElement.classList.remove("motion", "holding");
     };
@@ -252,6 +315,17 @@ export function Line() {
             strokeLinecap="round" strokeLinejoin="round" />
         </g>
       </svg>
+      {/* The opening mark. Decorative — the masthead carries the real one.
+          Sits after the diagram so it paints over it, and so the ring's own
+          <svg> never shadows the diagram in a `.ln svg` lookup. */}
+      <div className="ln-box" aria-hidden="true">
+        <span className="ln-box-panel">
+          <span className="ln-box-l">Belle&nbsp;V<i className="ring">
+            <svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="38.3" fill="none"
+              stroke="currentColor" strokeWidth="23.4" /></svg></i>yage</span>
+          <span className="ln-box-l">Estates</span>
+        </span>
+      </div>
     </div>
 
     {/* Without motion the camera never travels, so the regions would be
