@@ -2,15 +2,17 @@
    The site is one line. Everything else gets out of its way. ═══ */
 
 /* ── masthead ──────────────────────────────────────────────── */
+/* Blends with the page behind it, so it stays legible over black, over white,
+   and over the blurred menu scrim without ever being told which. */
 .mh{position:fixed; z-index:60; top:var(--pad); right:var(--pad);
-  display:flex; align-items:center; gap:18px;}
-.mh-wm{position:relative; z-index:2; mix-blend-mode:difference; font-weight:700; letter-spacing:-.03em;
+  display:flex; align-items:center; gap:18px; mix-blend-mode:difference;}
+.mh-wm{position:relative; z-index:2; font-weight:700; letter-spacing:-.03em;
   font-size:clamp(17px,1.7vw,23px); display:inline-flex; align-items:baseline; color:#fff;}
 .mh-wm .ring{display:inline-block; width:.578em; height:.578em;
   vertical-align:-.032em; margin:0 .008em;}
 .mh-wm .ring svg{display:block; overflow:visible;}
 
-.mh-burger{position:relative; z-index:2; mix-blend-mode:difference; width:44px; height:44px;
+.mh-burger{position:relative; z-index:2; width:44px; height:44px;
   display:grid; align-content:center; gap:5px; background:none; border:0;
   cursor:pointer; padding:0 8px;}
 .mh-burger i{display:block; height:2px; background:#fff; border-radius:var(--r-cap);
@@ -23,7 +25,7 @@
 /* A scrim over a blur: the line stays visible behind the menu but stops
    competing with it. 78% holds contrast over both grounds — over black it
    lands near #C7C7C7, which still reads at better than 12:1. */
-.mh-menu{position:fixed; inset:0; z-index:1;
+.mh-menu{position:fixed; inset:0; z-index:55;
   background:color-mix(in srgb, var(--paper) 78%, transparent);
   backdrop-filter:blur(30px) saturate(1.15);
   -webkit-backdrop-filter:blur(30px) saturate(1.15);
@@ -96,7 +98,7 @@ html.menu-open, html.menu-open body{overflow:hidden;}
 /* ── contact ───────────────────────────────────────────────── */
 .ct{min-height:100dvh; background:#000; color:#fff; display:flex; flex-direction:column;}
 .ct ::selection{background:#fff; color:#000;}
-.ct-inner{flex:1; padding:clamp(48px,11dvh,120px) var(--pad) clamp(32px,7dvh,72px);
+.ct-inner{flex:1; padding:clamp(22px,5dvh,52px) var(--pad) clamp(32px,7dvh,72px);
   display:flex; flex-direction:column; gap:clamp(28px,6dvh,64px);}
 .ct h2{font-size:clamp(40px,8vw,104px); letter-spacing:-.045em;}
 

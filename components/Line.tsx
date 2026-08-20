@@ -117,7 +117,7 @@ export function Line() {
 
       const tl = gsap.timeline({
         scrollTrigger: {
-          trigger: root.current!, start: "top top", end: "+=420%",
+          trigger: root.current!, start: "top top", end: "+=320%",
           pin: true, scrub: 0.35, invalidateOnRefresh: true,
         },
       });
@@ -134,7 +134,7 @@ export function Line() {
           { opacity: 1, duration: 0.7, stagger: 0.25, ease: "power2.out" }, 3.0)
         .to(".ln-region, .ln-head", { opacity: 0, duration: 0.5, ease: "power1.in" }, 6.2)
         /* The line keeps descending, then grows until there is nothing else. */
-        .to(path.current!, { strokeWidth: 3600, duration: 1.75, ease: "power2.in" }, 7.9);
+        .to(path.current!, { strokeWidth: 3600, duration: 1.8, ease: "power2.in" }, 7.5);
     }, root);
 
     return () => {

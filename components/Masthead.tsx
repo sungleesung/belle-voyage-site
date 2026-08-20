@@ -21,6 +21,7 @@ export function Masthead() {
   }, [open]);
 
   return (
+    <>
     <div className="mh">
       <a className="mh-wm" href="/">
         Belle&nbsp;V<i className="ring" aria-hidden="true">
@@ -34,6 +35,8 @@ export function Masthead() {
         <i aria-hidden="true" /><i aria-hidden="true" /><i aria-hidden="true" />
       </button>
 
+    </div>
+
       <div id="mh-menu" className="mh-menu" data-open={open} hidden={!open}>
         <nav aria-label="Primary">
           {STOPS.map((s) => (
@@ -44,6 +47,6 @@ export function Masthead() {
           {LEGAL.map((l) => <a key={l.label} href={l.href}>{l.label}</a>)}
         </div>
       </div>
-    </div>
+    </>
   );
 }
