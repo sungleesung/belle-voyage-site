@@ -239,3 +239,71 @@ html.menu-open, html.menu-open body{overflow:hidden;}
   .ft-map a{padding:12px 0; min-height:44px;}
   .ft-credit a{display:inline-block; padding:12px 0; min-height:44px;}
 }
+
+/* ── contact popup ─────────────────────────────────────────────
+   Contact is a stop on the line, so its popup is a piece of line: a blue route
+   drawn round the form with stations sitting on it. The outline is two nested
+   clip-paths — the blue layer shows through as the stroke — so it stays
+   octilinear at any size with nothing measured and no SVG to keep in sync.
+
+   The inner chamfer is ch - (2 - root2) * w. That is where a 45 degree edge
+   lands when the whole outline moves inward by the stroke width: the two square
+   edges shift by w, the diagonal by w*root2, and the intersection moves along
+   the edge by the difference. Using ch - w instead leaves the corners visibly
+   uneven. */
+.cm{width:100%; height:100%; max-width:none; max-height:none; inset:0;
+  padding:var(--pad); margin:0; border:0; background:transparent; overflow:visible;
+  display:grid; place-items:center;}
+.cm::backdrop{background:color-mix(in srgb, var(--paper) 78%, transparent);
+  backdrop-filter:blur(30px) saturate(1.15);
+  -webkit-backdrop-filter:blur(30px) saturate(1.15);}
+@supports not (backdrop-filter:blur(1px)){ .cm::backdrop{background:var(--paper);} }
+
+.cm-wrap{--ch:30px; --sw:9px;
+  position:relative; width:min(640px, 100%);
+  max-height:calc(100dvh - var(--pad) * 2);}
+.cm-frame{background:var(--eu); padding:var(--sw);
+  max-height:calc(100dvh - var(--pad) * 2);
+  clip-path:polygon(var(--ch) 0, calc(100% - var(--ch)) 0, 100% var(--ch),
+    100% calc(100% - var(--ch)), calc(100% - var(--ch)) 100%, var(--ch) 100%,
+    0 calc(100% - var(--ch)), 0 var(--ch));}
+
+/* Black ground and white type, the same as the contact section — so the shared
+   form arrives already dressed for it. */
+.cm-panel{--ich:calc(var(--ch) - 0.586 * var(--sw));
+  position:relative; background:#000; color:#fff;
+  max-height:calc(100dvh - var(--pad) * 2 - var(--sw) * 2); overflow-y:auto;
+  padding:clamp(26px,4vw,46px);
+  clip-path:polygon(var(--ich) 0, calc(100% - var(--ich)) 0, 100% var(--ich),
+    100% calc(100% - var(--ich)), calc(100% - var(--ich)) 100%, var(--ich) 100%,
+    0 calc(100% - var(--ich)), 0 var(--ich));}
+.cm-panel ::selection{background:#fff; color:#000;}
+.cm-panel h2{font-size:clamp(30px,4.4vw,52px); letter-spacing:-.045em;
+  margin:0 0 clamp(20px,3dvh,32px);}
+
+/* Straddling the stroke is what makes it a station on the line rather than a
+   shape next to one: the fill knocks a hole in the route, the way a real one
+   does. Bigger than the stroke on purpose, so it reads on both sides. */
+.cm-stop{position:absolute; z-index:2; width:46px; height:46px;
+  transform:translate(-50%,-50%); pointer-events:none;}
+.cm-stop svg{display:block; width:100%; height:100%;
+  fill:#000; stroke:var(--eu); stroke-width:4; stroke-linejoin:round;}
+.cm-stop[data-edge="top"]{top:0;    left:var(--p);}
+.cm-stop[data-edge="bottom"]{top:100%; left:var(--p);}
+.cm-stop[data-edge="left"]{left:0;   top:var(--p);}
+.cm-stop[data-edge="right"]{left:100%; top:var(--p);}
+
+.cm-x{position:absolute; top:10px; right:10px; width:44px; height:44px;
+  display:grid; place-items:center; padding:0; cursor:pointer;
+  background:none; border:0; color:rgba(255,255,255,.6);
+  transition:color var(--t-4) var(--e-line);}
+.cm-x:hover{color:#fff;}
+.cm-x svg{width:22px; height:22px; fill:none; stroke:currentColor;
+  stroke-width:2.2; stroke-linecap:round;}
+
+@media(max-width:760px){
+  .cm-wrap{--ch:22px; --sw:7px;}
+  .cm-stop{width:34px; height:34px;}
+  .cm-panel h2{font-size:clamp(28px,8vw,40px);}
+}
+@media(prefers-reduced-motion:reduce){ .cm-x{transition:none;} }

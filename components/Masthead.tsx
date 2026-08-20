@@ -1,6 +1,8 @@
 "use client";
 import { useEffect, useState } from "react";
 import { STOPS } from "@/lib/line";
+import { getView, onView, openContact, setView, type View } from "@/lib/overlay";
+import { getLenis } from "@/lib/lenis";
 
 const LEGAL = [
   { label: "Privacy policy",   href: "/privacy" },
@@ -10,15 +12,23 @@ const LEGAL = [
 ];
 
 export function Masthead() {
-  const [open, setOpen] = useState(false);
+  const [view, setLocal] = useState<View>(getView());
+  const open = view === "menu";
+
+  useEffect(() => onView(setLocal), []);
 
   useEffect(() => {
-    const esc = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
+    const esc = (e: KeyboardEvent) => e.key === "Escape" && setView(null);
     addEventListener("keydown", esc);
-    document.documentElement.classList.toggle("menu-open", open);
+    document.documentElement.classList.toggle("menu-open", view !== null);
+    /* overflow:hidden does not hold Lenis — it keeps scrolling the page behind
+       the overlay. Only stopping it does. Restart is gated on the intro having
+       landed, or an overlay opened mid-intro would hand scrolling back early. */
+    if (view) getLenis()?.stop();
+    else if (sessionStorage.getItem("bv-arrived")) getLenis()?.start();
     return () => { removeEventListener("keydown", esc);
       document.documentElement.classList.remove("menu-open"); };
-  }, [open]);
+  }, [view]);
 
   return (
     <>
@@ -29,9 +39,9 @@ export function Masthead() {
             stroke="currentColor" strokeWidth="23.4" /></svg></i>yage&nbsp;Estates
       </a>
 
-      <button className="mh-burger" type="button" aria-expanded={open}
-        aria-controls="mh-menu" onClick={() => setOpen((v) => !v)}>
-        <span className="sr">{open ? "Close menu" : "Open menu"}</span>
+      <button className="mh-burger" type="button" aria-expanded={view !== null}
+        aria-controls="mh-menu" onClick={() => setView(view ? null : "menu")}>
+        <span className="sr">{view ? "Close" : "Open menu"}</span>
         <i aria-hidden="true" /><i aria-hidden="true" /><i aria-hidden="true" />
       </button>
 
@@ -40,7 +50,11 @@ export function Masthead() {
       <div id="mh-menu" className="mh-menu" data-open={open} hidden={!open}>
         <nav aria-label="Primary">
           {STOPS.map((s) => (
-            <a key={s.label} href={s.href} onClick={() => setOpen(false)}>{s.label}</a>
+            /* Contact is a stop, not a page — it opens over the blur rather
+               than replacing it. */
+            <a key={s.label} href={s.href}
+              onClick={s.href === "#contact" ? openContact : () => setView(null)}>
+              {s.label}</a>
           ))}
         </nav>
         <div className="mh-legal">

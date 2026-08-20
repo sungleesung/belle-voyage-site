@@ -9,6 +9,7 @@ import {
 } from "@/lib/line";
 import type { P } from "@/lib/line";
 import { getLenis } from "@/lib/lenis";
+import { openContact } from "@/lib/overlay";
 
 /* Positioning the camera must happen before the browser paints, or the first
    frame is the landing. useLayoutEffect does; useEffect does not. */
@@ -282,7 +283,8 @@ export function Line() {
             const p = onDiag(st.t);
             return (
               <g key={st.label} className="ln-stop" transform={`translate(${p.x} ${p.y})`}>
-                <a href={st.href} aria-label={st.label}>
+                <a href={st.href} aria-label={st.label}
+                  onClick={st.href === "#contact" ? openContact : undefined}>
                   <circle r="62" fill="transparent" />
                   <Shape shape={st.shape} />
                   <text className="ln-lab" x="62" y="13">{st.label}</text>
