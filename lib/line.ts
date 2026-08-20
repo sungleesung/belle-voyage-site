@@ -52,7 +52,7 @@ export const REGIONS = [
 export const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 export const onDiag = (t: number): P => ({ x: lerp(A.x, B.x, t), y: lerp(A.y, B.y, t) });
 
-export function dRound(pts: P[], r = 110) {
+export function dRound(pts: P[], r = 240) {
   if (pts.length < 3) return d(pts);
   let out = `M${pts[0].x} ${pts[0].y}`;
   for (let i = 1; i < pts.length - 1; i++) {

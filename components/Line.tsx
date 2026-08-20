@@ -16,7 +16,8 @@ const reduced = () =>
   typeof window !== "undefined" && matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 function Shape({ shape }: { shape: "circle" | "square" | "triangle" }) {
-  const p = { fill: "#000", stroke: "#fff", strokeWidth: 8, strokeLinejoin: "round" as const };
+  const p = { className: "ln-shape", fill: "#000", stroke: "#fff",
+    strokeWidth: 8, strokeLinejoin: "round" as const };
   if (shape === "circle") return <circle r="30" {...p} />;
   if (shape === "square") return <rect x="-26" y="-26" width="52" height="52" {...p} />;
   return <polygon points="0,-31 28,18 -28,18" {...p} />;
@@ -89,7 +90,7 @@ export function Line() {
       if (!seen) {
         getLenis()?.stop();
         const arrive = gsap.to(ride, {
-          u: 1, duration: 2.6, ease: "power3.out", onUpdate: runIntro,
+          u: 1, duration: 2.9, ease: "power2.out", onUpdate: runIntro,
           onComplete: () => {
             sessionStorage.setItem("bv-arrived", "1");
             settle();
@@ -103,10 +104,10 @@ export function Line() {
           addEventListener(e, skip, { once: true, passive: true }));
 
         gsap.fromTo(".ln-stop", { opacity: 0 },
-          { opacity: 1, duration: 0.55, stagger: 0.1, ease: "power2.out", delay: 1.95 });
+          { opacity: 1, duration: 0.55, stagger: 0.1, ease: "power2.out", delay: 2.15 });
         const mh = document.querySelector(".mh");
         if (mh) gsap.fromTo(mh, { opacity: 0 },
-          { opacity: 1, duration: 0.6, ease: "power2.out", delay: 2.15 });
+          { opacity: 1, duration: 0.6, ease: "power2.out", delay: 2.4 });
       }
 
       /* ── the journey ─────────────────────────────────────────────
@@ -125,9 +126,12 @@ export function Line() {
       tl.to(s, { p: 1, duration: 10, ease: "none", onUpdate: move, immediateRender: false }, 0)
         /* White sheets down over the black, and the line flips as the edge
            crosses it — so the change reads as caused by the wipe. */
-        .to(".ln-stop", { opacity: 0, duration: 0.4, ease: "power1.in" }, 1.95)
         .to(sheet.current!, { clipPath: "inset(0 0 0% 0)", duration: 0.9, ease: "power2.inOut" }, 2.1)
         .to(path.current!, { stroke: "#000000", duration: 0.3, ease: "power1.inOut" }, 2.9)
+        /* A station is the ground knocked out with a keyline, so when the
+           ground changes the station has to change with it. */
+        .to(".ln-shape", { fill: "#ffffff", stroke: "#000000", duration: 0.32, ease: "power1.inOut" }, 2.42)
+        .to(".ln-lab", { fill: "#000000", duration: 0.32, ease: "power1.inOut" }, 2.42)
         /* Everything reaches full before the frame that shows it all together. */
         .fromTo(".ln-head", { opacity: 0 }, { opacity: 1, duration: 0.6, ease: "power2.out" }, 2.8)
         .fromTo(".ln-region", { opacity: 0 },
@@ -158,8 +162,8 @@ export function Line() {
 
           {/* stops that fly past on the way down */}
           {FLYBY.map((p, i) => (
-            <circle key={i} className="ln-flyby" cx={p.x} cy={p.y} r="19" fill="var(--paper)"
-              stroke="var(--ink)" strokeWidth="8" />
+            <circle key={i} className="ln-flyby" cx={p.x} cy={p.y} r="19" fill="#000"
+              stroke="#fff" strokeWidth="8" />
           ))}
 
           {/* the landing — shapes, because this is navigation */}
