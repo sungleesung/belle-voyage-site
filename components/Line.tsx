@@ -3,9 +3,10 @@ import { useEffect, useLayoutEffect, useRef } from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import {
-  RUN, ONWARD, INTRO, FLYBY, A, B, STOPS, REGIONS, STROKE,
-  onDiag, d, dRound, frame, cameraAt, REGIONS_TITLE_Y,
+  RUN, ONWARD, INTRO, FLYBY, A, B, C, STOPS, REGIONS, STROKE,
+  onDiag, d, dRound, frame, cameraAt, capPan, REGIONS_TITLE_Y,
 } from "@/lib/line";
+import type { P } from "@/lib/line";
 import { getLenis } from "@/lib/lenis";
 
 /* Positioning the camera must happen before the browser paints, or the first
@@ -31,12 +32,14 @@ export function Line() {
   const gulp = useRef<SVGPathElement>(null);
   const introPath = useRef<SVGPathElement>(null);
   const sheet = useRef<HTMLDivElement>(null);
+  const capped = useRef(false);
 
   /* The frame follows the viewport shape so the line is never cropped. */
   useEffect(() => {
     const fit = () => {
       const el = svg.current; if (!el) return;
       const r = el.getBoundingClientRect();
+      capped.current = capPan(r.width, r.height);
       const f = frame(r.width, r.height);
       el.setAttribute("viewBox", `${f.x} ${f.y} ${f.w} ${f.h}`);
     };
@@ -49,6 +52,12 @@ export function Line() {
 
   useIsoLayout(() => {
     svg.current?.classList.add("ready");
+    /* Layout effects run before the fitting effect, so seed it here too —
+       otherwise the first painted frame uses the uncapped pan. */
+    if (svg.current) {
+      const r0 = svg.current.getBoundingClientRect();
+      capped.current = capPan(r0.width, r0.height);
+    }
     if (reduced()) return;
     gsap.registerPlugin(ScrollTrigger);
     document.documentElement.classList.add("motion");
@@ -115,7 +124,7 @@ export function Line() {
          One scalar drives the camera; everything else keys off it. */
       const s = { p: 0 };
       let landed = !!seen;
-      const move = () => { if (!landed) return; const c = cameraAt(s.p); put(c.x, c.y); };
+      const move = () => { if (!landed) return; const c = cameraAt(s.p, capped.current); put(c.x, c.y); };
 
       const tl = gsap.timeline({
         scrollTrigger: {
@@ -137,23 +146,43 @@ export function Line() {
         .fromTo(".ln-head", { opacity: 0 }, { opacity: 1, duration: 0.6, ease: "power2.out" }, 2.8)
         .fromTo(".ln-region", { opacity: 0 },
           { opacity: 1, duration: 0.7, stagger: 0.25, ease: "power2.out" }, 3.0)
+        /* opacity:0 does not stop a tap. Without this the region links sit
+           live under the bottom-right of the landing screen. */
+        .set(".ln-region", { pointerEvents: "auto" }, 3.0)
         /* Nothing is dismissed. The line keeps descending and then grows until
            it has taken the regions and the rest of the frame with it. */
         .to(gulp.current!, {
           strokeWidth: () => {
-            const vb = svg.current!.viewBox.baseVal;
-            const cam = cameraAt(1);
-            const right = vb.x + vb.width;
-            /* Where the path crosses the top of the frame: still on the
-               diagonal if the frame is tall enough to reach it. */
-            const topPathY = vb.y - cam.y;
-            const onDiag = topPathY > A.y && topPathY < B.y;
-            const xTop = (onDiag ? A.x + (topPathY - A.y) : B.x) + cam.x;
-            const xVert = B.x + cam.x;
-            const need = Math.max(
-              xVert - vb.x, right - xVert,
-              xTop - vb.x, right - xTop,
-            );
+            /* Measured off the viewport, NOT off the svg's viewBox attribute.
+               On a resize, ScrollTrigger pins the section at hard pixel sizes
+               and refreshes before the ResizeObserver has rewritten the
+               viewBox — so reading the attribute here yields the pre-rotation
+               frame, and the end value latches to it for good. innerWidth /
+               innerHeight are already correct at that instant. */
+            const vpw = window.innerWidth, vph = window.innerHeight;
+            const f = frame(vpw, vph);
+            const c = cameraAt(1, capPan(vpw, vph));
+            /* Exact: the furthest frame corner from the line, measured
+               perpendicular to it. Measuring the horizontal gap instead
+               overstates the diagonal by root-2, and the stroke then went on
+               growing for a fifth of a screen after the frame was already
+               covered — which is where the black-only pause came from. */
+            const seg: [P, P][] = [
+              [{ x: A.x, y: A.y - 6000 }, A], [A, B], [B, C],
+              [C, { x: C.x, y: C.y + 6000 }],
+            ];
+            let need = 0;
+            for (const px of [f.x - c.x, f.x + f.w - c.x])
+              for (const py of [f.y - c.y, f.y + f.h - c.y]) {
+                let best = Infinity;
+                for (const [p, q] of seg) {
+                  const vx = q.x - p.x, vy = q.y - p.y;
+                  const wx = px - p.x, wy = py - p.y;
+                  const t = Math.max(0, Math.min(1, (wx * vx + wy * vy) / (vx * vx + vy * vy)));
+                  best = Math.min(best, Math.hypot(wx - t * vx, wy - t * vy));
+                }
+                need = Math.max(need, best);
+              }
             return Math.ceil(need * 2 * 1.06);
           },
           duration: 1.8, ease: "power2.in",
@@ -206,6 +235,7 @@ export function Line() {
             <g key={r.code} className={`ln-region ln-region-${r.code}`} transform={`translate(${B.x} ${r.y})`}>
               <a href={r.href} aria-label={`Properties in ${r.name}`}>
                 <circle r="34" fill={r.colour} stroke="#000" strokeWidth="8" />
+                <rect className="ln-hit" x="72" y="-60" width="446" height="120" fill="transparent" />
                 <rect className="ln-plate" x="78" y="-46" width="430" height="92" rx="3"
                   style={{ ["--c" as string]: r.colour }} />
                 <text className="ln-rname" x="112" y="0">{r.name}</text>

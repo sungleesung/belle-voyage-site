@@ -69,6 +69,8 @@ html.menu-open, html.menu-open body{overflow:hidden;}
 .ln-head{font-size:30px; font-weight:700; letter-spacing:.16em; text-transform:uppercase;
   fill:#000; opacity:0;}
 /* Each plate wears its own region's colour. */
+/* Live only once the regions are revealed — see Line.tsx. */
+.ln-region{pointer-events:none;}
 .ln-plate{fill:none; stroke:var(--c); stroke-width:4;
   transition:fill var(--t-4) var(--e-line);}
 .ln-rname{font-size:38px; font-weight:700; letter-spacing:-.02em; fill:#000;
@@ -168,8 +170,54 @@ html.menu-open, html.menu-open body{overflow:hidden;}
 }
 
 @media(max-width:760px){
-  .mh{gap:12px;}
-  .ln-lab{font-size:52px;}
-  .ln-rname{font-size:46px;}
-  .ln-head{font-size:38px;}
+  .mh{gap:10px;}
+
+  /* Everything inside the diagram scales with the frame, and the frame is
+     880 units wide against a ~390px screen — so type set for a desktop
+     viewBox lands around 20px on a phone. Sized up to compensate. */
+  .ln-lab{font-size:60px;}
+  /* "United States" cleared its arrow by four units at 52 — flush, not clear.
+     Slightly smaller type in a slightly wider plate gives it room. */
+  .ln-rname{font-size:48px;}
+  .ln-plate{width:474px; stroke-width:5;}
+  .ln-hit{width:490px;}
+  .ln-arw{translate:26px 0;}
+  .ln-head{font-size:42px; letter-spacing:.2em;}
+
+  /* A full-screen 30px blur is expensive on a phone for very little gain. */
+  .mh-menu{backdrop-filter:blur(16px) saturate(1.1);
+    -webkit-backdrop-filter:blur(16px) saturate(1.1);}
+  .mh-menu nav a{font-size:clamp(38px,12vw,72px);}
+
+  .ft-map h3{margin-bottom:8px;}
+
+  .ct h2{font-size:clamp(38px,11vw,68px);}
+  .ct-inner{gap:clamp(20px,4dvh,40px);}
+  .ct-path svg{position:static; transform:none; justify-self:start;}
+  .ct-path:hover svg{transform:none;}
+  .ct-path{padding-right:0;}
+  .ft{gap:clamp(24px,5vw,60px) 0; padding-top:clamp(32px,6dvh,64px);}
+  .ft-map{grid-template-columns:repeat(auto-fit,minmax(128px,1fr)); gap:20px;}
+}
+
+/* A phone on its side: 700 units of height against ~390px leaves no room for
+   generous type, so the frame governs and the chrome gets out of the way. */
+@media(max-height:520px) and (orientation:landscape){
+  .mh{top:14px; right:14px;}
+  .mh-menu{padding:74px var(--pad) 18px;}
+  .mh-menu nav a{font-size:clamp(26px,7vw,44px);}
+  .mh-menu nav{gap:0;}
+  .ln-lab{font-size:44px;}
+  .ln-rname{font-size:40px;}
+  .ln-head{font-size:30px;}
+}
+
+/* Tap targets follow the pointer, not the viewport width. A phone held
+   sideways is 844px wide and slipped straight past the width query above,
+   leaving thirteen links under the 44px minimum. 44px minimums are reached
+   with padding, not font size, so nothing reflows. */
+@media(pointer:coarse){
+  .mh-wm{padding:11px 0;}
+  .ft-map a{padding:12px 0; min-height:44px;}
+  .ft-credit a{display:inline-block; padding:12px 0; min-height:44px;}
 }

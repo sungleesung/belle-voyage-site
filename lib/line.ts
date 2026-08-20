@@ -29,7 +29,7 @@ export const FLYBY: P[] = [
 export const A: P = { x: 180, y: 200 };   // top of the diagonal
 export const B: P = { x: 820, y: 840 };   // the first corner
 /* ── the regions: straight down ──────────────────────────────── */
-export const C: P = { x: 820, y: 2100 };  // the foot of the vertical
+export const C: P = { x: 820, y: 4200 };  // the foot of the vertical
 
 export const RUN: P[] = [...INTRO, B, C];
 export const ONWARD: P[] = [{ x: A.x, y: A.y - 260 }, A, B, C];
@@ -111,11 +111,33 @@ function hermite(i: number, p: number, v: number[], m: number[]) {
 
 const FX = FRAMES.map((f) => f.x);
 const FY = FRAMES.map((f) => f.y);
-export function cameraAt(p: number) {
+
+/* A phone held upright sees roughly three times as much of the path vertically
+   as a laptop does, so the diagonal's last stop is still on screen when the
+   regions arrive — where a laptop has long since left it behind. Running the
+   full 640-unit pan drags that stop off the left edge while its label is still
+   on it, leaving a caption with nothing to caption. The frame cannot simply be
+   widened: holding the vertical on screen and pushing the stop fully off it are
+   mutually exclusive in an 880-unit window. So the pan is capped instead, and
+   the stop stays visible. -510 is the tightest cap that still clears the stop
+   and keeps the whole region plate inside the frame at the end of the pan. */
+const PAN_CAP = -510;
+const FXP = FX.map((x) => Math.max(x, PAN_CAP));
+const MXP = tangents(AT, FXP);
+
+/* Portrait enough for the cap to matter. Every iPad in portrait is under this
+   (12.9in is 0.75, the rest run 0.66-0.70) and takes the cap too — which is
+   right: they use the same 880-unit frame a phone does. */
+export const capPan = (w: number, h: number) => w / Math.max(h, 1) < 0.72;
+
+export function cameraAt(p: number, capped = false) {
   const q = Math.min(1, Math.max(0, p));
   let i = 0;
   while (i < AT.length - 2 && q > AT[i + 1]) i++;
-  return { x: hermite(i, q, FX, MX), y: hermite(i, q, FY, MY) };
+  return {
+    x: hermite(i, q, capped ? FXP : FX, capped ? MXP : MX),
+    y: hermite(i, q, FY, MY),
+  };
 }
 
 /* The frame is a window onto path space. It must always contain this box,
