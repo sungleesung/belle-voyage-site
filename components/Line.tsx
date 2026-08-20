@@ -16,7 +16,7 @@ const reduced = () =>
   typeof window !== "undefined" && matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 function Shape({ shape }: { shape: "circle" | "square" | "triangle" }) {
-  const p = { fill: "var(--paper)", stroke: "var(--ink)", strokeWidth: 8, strokeLinejoin: "round" as const };
+  const p = { fill: "#000", stroke: "#fff", strokeWidth: 8, strokeLinejoin: "round" as const };
   if (shape === "circle") return <circle r="30" {...p} />;
   if (shape === "square") return <rect x="-26" y="-26" width="52" height="52" {...p} />;
   return <polygon points="0,-31 28,18 -28,18" {...p} />;
@@ -28,7 +28,7 @@ export function Line() {
   const cam = useRef<SVGGElement>(null);
   const path = useRef<SVGPathElement>(null);
   const introPath = useRef<SVGPathElement>(null);
-  const ink = useRef<HTMLDivElement>(null);
+  const sheet = useRef<HTMLDivElement>(null);
 
   /* The frame follows the viewport shape so the line is never cropped. */
   useEffect(() => {
@@ -52,9 +52,6 @@ export function Line() {
     document.documentElement.classList.add("motion");
 
     const ctx = gsap.context(() => {
-      const cs = getComputedStyle(document.documentElement);
-      const hue = (n: string) => cs.getPropertyValue(`--${n}`).trim();
-      const PAPER = hue("white") || "#FFFFFF";
 
       const put = (x: number, y: number) =>
         cam.current?.setAttribute("transform", `translate(${x} ${y})`);
@@ -126,21 +123,17 @@ export function Line() {
       });
 
       tl.to(s, { p: 1, duration: 10, ease: "none", onUpdate: move, immediateRender: false }, 0)
-        /* The black wipes down over the ground, and the line flips colour as
-           the edge crosses it — so the change reads as caused by the wipe. */
-        .to(ink.current!, { clipPath: "inset(0 0 0% 0)", duration: 0.9, ease: "power2.inOut" }, 2.1)
-        .to(path.current!, { stroke: PAPER, duration: 0.28, ease: "power1.inOut" }, 2.62)
+        /* White sheets down over the black, and the line flips as the edge
+           crosses it — so the change reads as caused by the wipe. */
+        .to(".ln-stop", { opacity: 0, duration: 0.4, ease: "power1.in" }, 1.95)
+        .to(sheet.current!, { clipPath: "inset(0 0 0% 0)", duration: 0.9, ease: "power2.inOut" }, 2.1)
+        .to(path.current!, { stroke: "#000000", duration: 0.3, ease: "power1.inOut" }, 2.9)
         /* Everything reaches full before the frame that shows it all together. */
         .fromTo(".ln-head", { opacity: 0 }, { opacity: 1, duration: 0.6, ease: "power2.out" }, 2.8)
         .fromTo(".ln-region", { opacity: 0 },
           { opacity: 1, duration: 0.7, stagger: 0.25, ease: "power2.out" }, 3.0)
-        .to(".ln-region, .ln-head", { opacity: 0, duration: 0.5, ease: "power1.in" }, 6.0)
-
-        /* The line turns black while the ground is still black — so it is the
-           returning white that reveals it, rather than a colour change nobody
-           can see. Then it grows until there is nothing else left. */
-        .to(path.current!, { stroke: "#000000", duration: 0.25, ease: "none" }, 6.2)
-        .to(ink.current!, { clipPath: "inset(100% 0 0 0)", duration: 0.9, ease: "power2.inOut" }, 6.45)
+        .to(".ln-region, .ln-head", { opacity: 0, duration: 0.5, ease: "power1.in" }, 6.2)
+        /* The line keeps descending, then grows until there is nothing else. */
         .to(path.current!, { strokeWidth: 3600, duration: 1.75, ease: "power2.in" }, 7.9);
     }, root);
 
@@ -154,7 +147,7 @@ export function Line() {
     <>
     <div className="ln" ref={root}>
       <div className="ln-bg" />
-      <div className="ln-ink" ref={ink} />
+      <div className="ln-sheet" ref={sheet} />
       <svg ref={svg} className="ln-svg" viewBox="0 0 1000 700"
         preserveAspectRatio="xMidYMid meet" role="navigation" aria-label="Main">
         <g ref={cam}>
@@ -189,7 +182,7 @@ export function Line() {
           {REGIONS.map((r) => (
             <g key={r.code} className={`ln-region ln-region-${r.code}`} transform={`translate(${B.x} ${r.y})`}>
               <a href={r.href} aria-label={`Properties in ${r.name}`}>
-                <circle r="34" fill={r.colour} stroke="var(--white)" strokeWidth="8" />
+                <circle r="34" fill={r.colour} stroke="#000" strokeWidth="8" />
                 <rect className="ln-plate" x="78" y="-46" width="430" height="92" rx="3"
                   style={{ ["--c" as string]: r.colour }} />
                 <text className="ln-rname" x="112" y="0">{r.name}</text>
