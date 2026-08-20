@@ -1,10 +1,24 @@
 import { Arrow } from "./Arrow";
 
-const LEGAL = [
-  { label: "Privacy policy",   href: "/privacy" },
-  { label: "Terms of service", href: "/terms" },
-  { label: "AI usage policy",  href: "/ai-usage" },
-  { label: "Site map",         href: "/sitemap" },
+/* The site map, laid out as a map rather than a row of links. */
+const MAP = [
+  { head: "Properties", links: [
+    { label: "All properties",  href: "/properties" },
+    { label: "Canada",          href: "/properties?market=ca" },
+    { label: "United States",   href: "/properties?market=us" },
+    { label: "Europe",          href: "/properties?market=eu" },
+  ]},
+  { head: "Company", links: [
+    { label: "About",           href: "/about" },
+    { label: "Owners",          href: "/owners" },
+    { label: "Contact",         href: "#contact" },
+  ]},
+  { head: "Legal", links: [
+    { label: "Privacy policy",   href: "/privacy" },
+    { label: "Terms of service", href: "/terms" },
+    { label: "AI usage policy",  href: "/ai-usage" },
+    { label: "Site map",         href: "/sitemap" },
+  ]},
 ];
 
 export function Contact() {
@@ -52,16 +66,25 @@ export function Contact() {
         </div>
       </div>
 
-      <footer className="ct-foot">
-        <a className="ct-wm" href="/">
-          Belle V<i className="ring" aria-hidden="true">
+      <footer className="ft">
+        <a className="ft-wm" href="/" aria-label="Belle Voyage Estates, home">
+          <span className="ft-wm1">Belle&nbsp;V<i className="ring" aria-hidden="true">
             <svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="38.3" fill="none"
-              stroke="currentColor" strokeWidth="23.4" /></svg></i>yage
+              stroke="currentColor" strokeWidth="23.4" /></svg></i>yage</span>
+          <span className="ft-wm2">Estates</span>
         </a>
-        <nav aria-label="Legal">
-          {LEGAL.map((l) => <a key={l.label} href={l.href}>{l.label}</a>)}
+        <nav className="ft-map" aria-label="Site map">
+          {MAP.map((col) => (
+            <div key={col.head}>
+              <h3>{col.head}</h3>
+              <ul>{col.links.map((l) => (
+                <li key={l.label}><a href={l.href}>{l.label}</a></li>
+              ))}</ul>
+            </div>
+          ))}
         </nav>
-        <p className="ct-credit">
+        <p className="ft-credit">
+          © {new Date().getFullYear()} Belle Voyage Estates ·
           Designed by Sung — <a href="mailto:hello@sungshil.com">hello@sungshil.com</a>
         </p>
       </footer>

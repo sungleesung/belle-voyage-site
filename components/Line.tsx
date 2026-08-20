@@ -4,7 +4,7 @@ import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import {
   RUN, ONWARD, INTRO, FLYBY, A, B, STOPS, REGIONS, STROKE,
-  onDiag, d, dRound, frame, cameraAt,
+  onDiag, d, dRound, frame, cameraAt, REGIONS_TITLE_Y,
 } from "@/lib/line";
 import { getLenis } from "@/lib/lenis";
 
@@ -54,7 +54,6 @@ export function Line() {
     const ctx = gsap.context(() => {
       const cs = getComputedStyle(document.documentElement);
       const hue = (n: string) => cs.getPropertyValue(`--${n}`).trim();
-      const BLUE = hue("eu") || "#4172D1";
       const PAPER = hue("white") || "#FFFFFF";
 
       const put = (x: number, y: number) =>
@@ -131,16 +130,18 @@ export function Line() {
            the edge crosses it — so the change reads as caused by the wipe. */
         .to(ink.current!, { clipPath: "inset(0 0 0% 0)", duration: 0.9, ease: "power2.inOut" }, 2.1)
         .to(path.current!, { stroke: PAPER, duration: 0.28, ease: "power1.inOut" }, 2.62)
-        /* All three regions reach full before the frame that shows them all. */
+        /* Everything reaches full before the frame that shows it all together. */
+        .fromTo(".ln-head", { opacity: 0 }, { opacity: 1, duration: 0.6, ease: "power2.out" }, 2.8)
         .fromTo(".ln-region", { opacity: 0 },
-          { opacity: 1, duration: 0.7, stagger: 0.25, ease: "power2.out" }, 2.9)
-        /* The wipe carries on downward and takes the black with it. */
-        .to(ink.current!, { clipPath: "inset(100% 0 0 0)", duration: 0.9, ease: "power2.inOut" }, 5.9)
-        .to(path.current!, { stroke: BLUE, duration: 0.28, ease: "power1.inOut" }, 6.42)
-        /* Canada and the United States ride off the top under the camera —
-           that is what "the camera carries them off" should mean. Only Europe
-           never leaves the frame, so only Europe needs a fade. */
-        .to(".ln-region-EU", { opacity: 0, duration: 0.5, ease: "power1.in" }, 6.1);
+          { opacity: 1, duration: 0.7, stagger: 0.25, ease: "power2.out" }, 3.0)
+        .to(".ln-region, .ln-head", { opacity: 0, duration: 0.5, ease: "power1.in" }, 6.0)
+
+        /* The line turns black while the ground is still black — so it is the
+           returning white that reveals it, rather than a colour change nobody
+           can see. Then it grows until there is nothing else left. */
+        .to(path.current!, { stroke: "#000000", duration: 0.25, ease: "none" }, 6.2)
+        .to(ink.current!, { clipPath: "inset(100% 0 0 0)", duration: 0.9, ease: "power2.inOut" }, 6.45)
+        .to(path.current!, { strokeWidth: 3600, duration: 1.75, ease: "power2.in" }, 7.9);
     }, root);
 
     return () => {
@@ -182,14 +183,17 @@ export function Line() {
             );
           })}
 
+          <text className="ln-head" x={B.x + 78} y={REGIONS_TITLE_Y}>Regions</text>
+
           {/* the regions — colours, because these ARE the regions */}
           {REGIONS.map((r) => (
             <g key={r.code} className={`ln-region ln-region-${r.code}`} transform={`translate(${B.x} ${r.y})`}>
               <a href={r.href} aria-label={`Properties in ${r.name}`}>
                 <circle r="34" fill={r.colour} stroke="var(--white)" strokeWidth="8" />
-                <rect className="ln-plate" x="78" y="-46" width="430" height="92" rx="3" />
-                <text className="ln-rname" x="112" y="12">{r.name}</text>
-                <g className="ln-arw" transform="translate(452 0)">
+                <rect className="ln-plate" x="78" y="-46" width="430" height="92" rx="3"
+                  style={{ ["--c" as string]: r.colour }} />
+                <text className="ln-rname" x="112" y="0">{r.name}</text>
+                <g className="ln-arw" transform="translate(452 0)" style={{ ["--c" as string]: r.colour }}>
                   <path d="M-14 0h26M4 -10l10 10-10 10" fill="none" strokeWidth="4"
                     strokeLinecap="round" strokeLinejoin="round" />
                 </g>

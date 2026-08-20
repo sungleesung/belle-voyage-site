@@ -29,12 +29,10 @@ export const FLYBY: P[] = [
 export const A: P = { x: 180, y: 200 };   // top of the diagonal
 export const B: P = { x: 820, y: 840 };   // the first corner
 /* ── the regions: straight down ──────────────────────────────── */
-export const C: P = { x: 820, y: 1900 };  // the second corner
-/* ── off ─────────────────────────────────────────────────────── */
-export const D: P = { x: -1400, y: 1900 };
+export const C: P = { x: 820, y: 2100 };  // the foot of the vertical
 
-export const RUN: P[] = [...INTRO, B, C, D];
-export const ONWARD: P[] = [{ x: A.x, y: A.y - 260 }, A, B, C, D];
+export const RUN: P[] = [...INTRO, B, C];
+export const ONWARD: P[] = [{ x: A.x, y: A.y - 260 }, A, B, C];
 
 /* Three stops on the diagonal. Shapes, not colours — this is navigation. */
 export const STOPS = [
@@ -44,10 +42,11 @@ export const STOPS = [
 ];
 
 /* Three stops on the vertical. Colours, because these ARE the regions. */
+export const REGIONS_TITLE_Y = 1010;
 export const REGIONS = [
-  { code: "CA", name: "Canada",        colour: "var(--ca)", y: 1120, href: "/properties?market=ca" },
-  { code: "US", name: "United States", colour: "var(--us)", y: 1350, href: "/properties?market=us" },
-  { code: "EU", name: "Europe",        colour: "var(--eu)", y: 1580, href: "/properties?market=eu" },
+  { code: "CA", name: "Canada",        colour: "var(--ca)", y: 1140, href: "/properties?market=ca" },
+  { code: "US", name: "United States", colour: "var(--us)", y: 1330, href: "/properties?market=us" },
+  { code: "EU", name: "Europe",        colour: "var(--eu)", y: 1520, href: "/properties?market=eu" },
 ];
 
 export const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
@@ -75,12 +74,11 @@ export const d = (pts: P[]) =>
    the journey passes through; scroll interpolates between them. */
 export const FRAMES: { at: number; x: number; y: number }[] = [
   { at: 0.00, x:    0, y:     0 },   // the landing diagonal, framed
-  { at: 0.20, x: -320, y:  -320 },   // arriving at the first corner
-  { at: 0.44, x: -640, y:  -830 },   // all three regions in view
-  { at: 0.54, x: -640, y:  -960 },   // decelerating THROUGH them, never stopping
-  { at: 0.74, x: -300, y: -1380 },   // the corner, centred, opening out
-  { at: 0.80, x: -340, y: -1392 },   // a drift, so the spline never flatlines
-  { at: 1.00, x: -900, y: -1392 },   // away — 560 units of real departure
+  { at: 0.20, x: -320, y:  -320 },   // arriving at the corner
+  { at: 0.46, x: -640, y:  -745 },   // the heading and all three regions, together
+  { at: 0.64, x: -620, y:  -830 },   // still descending — never a dead stop
+  { at: 0.84, x: -430, y:  -905 },   // drifting to centre before it grows
+  { at: 1.00, x: -330, y:  -980 },   // so the black opens outward, not sideways
 ];
 
 /* Monotone cubic Hermite (Fritsch–Carlson).

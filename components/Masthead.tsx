@@ -15,16 +15,17 @@ export function Masthead() {
   useEffect(() => {
     const esc = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
     addEventListener("keydown", esc);
-    document.documentElement.style.overflow = open ? "hidden" : "";
-    return () => { removeEventListener("keydown", esc); document.documentElement.style.overflow = ""; };
+    document.documentElement.classList.toggle("menu-open", open);
+    return () => { removeEventListener("keydown", esc);
+      document.documentElement.classList.remove("menu-open"); };
   }, [open]);
 
   return (
     <div className="mh">
       <a className="mh-wm" href="/">
-        Belle V<i className="ring" aria-hidden="true">
+        Belle&nbsp;V<i className="ring" aria-hidden="true">
           <svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="38.3" fill="none"
-            stroke="currentColor" strokeWidth="23.4" /></svg></i>yage
+            stroke="currentColor" strokeWidth="23.4" /></svg></i>yage&nbsp;Estates
       </a>
 
       <button className="mh-burger" type="button" aria-expanded={open}
