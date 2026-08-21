@@ -3,7 +3,7 @@ import { useEffect, useLayoutEffect, useRef } from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import {
-  RUN, ONWARD, INTRO, FLYBY, LEAD, INTRO_ANCHOR, introZoom,
+  RUN, ONWARD, INTRO, FLYBY, LEAD, INTRO_ANCHOR, PLATE_GAP,
   A, B, C, STOPS, REGIONS, STROKE,
   onDiag, d, dRound, frame, cameraAt, capPan, REGIONS_TITLE_Y,
 } from "@/lib/line";
@@ -35,6 +35,7 @@ export function Line() {
   const introPath = useRef<SVGPathElement>(null);
   const sheet = useRef<HTMLDivElement>(null);
   const capped = useRef(false);
+  const box = useRef<HTMLDivElement>(null);
   /* Set while the intro owns the camera, so a resize re-derives it. Null after
      the intro hands over, because then the scroll owns the camera. */
   const reframe = useRef<(() => void) | null>(null);
@@ -74,18 +75,15 @@ export function Line() {
 
     const ctx = gsap.context(() => {
 
-      const put = (x: number, y: number, k = 1) =>
-        cam.current?.setAttribute("transform",
-          k === 1 ? `translate(${x} ${y})` : `translate(${x} ${y}) scale(${k})`);
+      const put = (x: number, y: number) =>
+        cam.current?.setAttribute("transform", `translate(${x} ${y})`);
 
       /* ── the opening ─────────────────────────────────────────────
-         The camera does not start beside the line, it starts INSIDE it —
-         pushed in far enough that the stroke alone is the whole screen, so the
-         first frame is a red field carrying the mark. Pulling back out is the
-         exact inverse of the swallow that closes the sequence: there the line
-         grows until it takes the frame, here the frame retreats until the line
-         is a line again. The pull-back is also what reveals the stops and the
-         detour, so they arrive by being approached rather than by fading in.
+         The line down the left with its first station named beside it: a stop
+         and a plate, the same construction the regions use further down, so
+         the first thing on screen is already the system rather than a title
+         card laid over it. The plate goes; the station does not — it gets left
+         behind on the line like every other stop.
 
          Then the camera RIDES the line down. Translating on Y alone made the
          line whip across the viewport, because the path turns and the camera
@@ -111,22 +109,25 @@ export function Line() {
         path.current?.setAttribute("d", d(ONWARD));
         gsap.set(".ln-flyby", { opacity: 0 });
       };
-      /* z is how far in the camera still is: 1 inside the stroke, 0 out. Kept
-         as a fraction, not a scale, so a window change mid-intro re-derives
-         the depth instead of leaving a gap at the edge of the frame. */
-      const intro = { u: seen ? 1 : LEAD / IL, z: seen ? 0 : 1 };
+      /* The plate is HTML, so it is placed in screen terms from the same frame
+         the camera uses. It has faded before the camera moves, so it never has
+         to track anything — only survive a resize. */
+      const placePlate = () => {
+        const el = box.current;
+        if (!el) return;
+        const f = frame(window.innerWidth, window.innerHeight);
+        el.style.setProperty("--px",
+          `${((INTRO_ANCHOR.x + PLATE_GAP) - f.x) / f.w * 100}%`);
+        el.style.setProperty("--py", `${(INTRO_ANCHOR.y - f.y) / f.h * 100}%`);
+      };
+      const intro = { u: seen ? 1 : LEAD / IL };
       if (seen) settle();
       const runIntro = () => {
         const P = ip.getPointAtLength(intro.u * IL);
-        /* Geometric, not linear. Interpolating the scale itself spends most
-           of the time barely moving and then rushes the last of it, because
-           what the eye reads is the RATE of expansion (dk/k), not dk. Raising
-           the depth to the power of z makes that rate constant, so the
-           pull-back is even the whole way out. */
-        const k = Math.pow(introZoom(window.innerWidth, window.innerHeight), intro.z);
         const a = smooth(1 - SLIDE_FROM / IL, 1 - SLIDE_TO / IL, intro.u);
-        put((INTRO_ANCHOR.x + (A.x - INTRO_ANCHOR.x) * a) - k * P.x,
-            (INTRO_ANCHOR.y + (A.y - INTRO_ANCHOR.y) * a) - k * P.y, k);
+        put((INTRO_ANCHOR.x + (A.x - INTRO_ANCHOR.x) * a) - P.x,
+            (INTRO_ANCHOR.y + (A.y - INTRO_ANCHOR.y) * a) - P.y);
+        placePlate();
       };
       runIntro();
 
@@ -152,34 +153,29 @@ export function Line() {
           },
         });
         open
-          /* Held a beat before anything moves: the mark is the whole screen,
-             and it should be allowed to be. */
-          .to(".ln-box-panel", { opacity: 0, scale: 0.88, duration: 0.55, ease: "power2.in" }, 0.40)
-          .to(intro, { z: 0, duration: 1.35, ease: "power2.inOut", onUpdate: runIntro }, 0.45)
-          .to(intro, { u: 1, duration: 1.95, ease: "power2.inOut", onUpdate: runIntro }, 1.80)
+          /* Held long enough to be read, then it goes and the journey starts —
+             the last of the fade runs under the first of the ride, so leaving
+             the station is one move rather than two. */
+          .to(".ln-box-panel", { opacity: 0, duration: 0.55, ease: "power2.in" }, 0.75)
+          .to(intro, { u: 1, duration: 1.95, ease: "power2.inOut", onUpdate: runIntro }, 1.10)
           .fromTo(".ln-stop", { opacity: 0 },
-            { opacity: 1, duration: 0.55, stagger: 0.1, ease: "power2.out" }, 3.10)
+            { opacity: 1, duration: 0.55, stagger: 0.1, ease: "power2.out" }, 2.45)
           /* The stops passed on the way down belong to the descent, so they go
-             out with it — landing exactly when the camera stops. settle() hides
-             them too, but that runs on the timeline's completion, 150ms later:
-             long enough that on a portrait frame, where the lowest of them is
-             still on screen at the landing, they sat there and then vanished in
-             a single frame. */
-          .to(".ln-flyby", { opacity: 0, duration: 0.5, ease: "power2.in" }, 3.25);
+             out with it — landing exactly when the camera stops, rather than
+             being cut a frame later when settle() swaps the path out. */
+          .to(".ln-flyby", { opacity: 0, duration: 0.5, ease: "power2.in" }, 2.55);
         const mh = document.querySelector<HTMLElement>(".mh");
         if (mh) {
           /* opacity 0 does not stop a click or a Tab. Same fault as the region
              links: an invisible control that still works. */
           mh.inert = true;
           open.fromTo(mh, { opacity: 0 },
-            { opacity: 1, duration: 0.6, ease: "power2.out" }, 3.30)
-            .set(mh, { inert: false }, 3.30);
+            { opacity: 1, duration: 0.6, ease: "power2.out" }, 2.65)
+            .set(mh, { inert: false }, 2.65);
         }
 
         /* Anyone who reaches for the scrollbar has decided not to watch it —
-           so land 0.55s from the input, whenever it lands. A fixed timeScale
-           made that depend on where in the intro they reached, which on an
-           early skip was over two seconds. */
+           so land 0.55s from the input, whenever it lands. */
         const skip = () => {
           const left = open.duration() - open.time();
           if (left > 0.55) open.timeScale(left / 0.55);
@@ -282,9 +278,12 @@ export function Line() {
             strokeWidth={STROKE} strokeLinecap="round" strokeLinejoin="round" />
 
           {/* stops that fly past on the way down */}
+          {/* The first is the named station — the one the plate belongs to — so
+              it is drawn larger, the same way the region stations are larger
+              than the stops passed on the way down. */}
           {FLYBY.map((p, i) => (
-            <circle key={i} className="ln-flyby" cx={p.x} cy={p.y} r="19" fill="#000"
-              stroke="#fff" strokeWidth="8" />
+            <circle key={i} className="ln-flyby" cx={p.x} cy={p.y}
+              r={i === 0 ? 30 : 19} fill="#000" stroke="#fff" strokeWidth={i === 0 ? 9 : 8} />
           ))}
 
           {/* the landing — shapes, because this is navigation */}
@@ -326,10 +325,9 @@ export function Line() {
             strokeLinecap="round" strokeLinejoin="round" />
         </g>
       </svg>
-      {/* The opening mark. Decorative — the masthead carries the real one.
-          Sits after the diagram so it paints over it, and so the ring's own
-          <svg> never shadows the diagram in a `.ln svg` lookup. */}
-      <div className="ln-box" aria-hidden="true">
+      {/* The opening: the station on the line, named. Decorative — the
+          masthead carries the real wordmark. */}
+      <div className="ln-box" ref={box} aria-hidden="true">
         <span className="ln-box-panel">
           <span className="ln-box-l">Belle&nbsp;V<i className="ring">
             <svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="38.3" fill="none"

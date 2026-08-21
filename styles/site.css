@@ -53,17 +53,27 @@ html.menu-open, html.menu-open body{overflow:hidden;}
    it. The section owns its own palette in both themes — it opens black,
    turns white, and the swallow returns it to black for the contact sheet. */
 .ln-sheet{position:absolute; inset:0; background:#fff; clip-path:inset(0 0 100% 0);}
-/* The opening frame is the inside of the line, so the screen is red and this
-   sits on it: a black panel carrying the mark, in the manner of a box logo.
-   It is gone before the pull-back finishes — it belongs to the held beat, not
-   to the journey. Hidden unless the intro actually runs, so reduced motion and
-   a returning visitor never see it. */
-.ln-box{position:absolute; inset:0; z-index:3; display:grid; place-items:center;
-  pointer-events:none; padding:var(--pad);}
-.ln-box-panel{opacity:0; background:#000; color:#fff; display:block;
-  padding:clamp(16px,2.6vw,34px) clamp(22px,4.2vw,56px);
-  font-weight:700; letter-spacing:-.045em; line-height:.98; text-align:center;
-  font-size:clamp(32px,7.4vw,108px);}
+/* The opening: the line down the left with its first station named beside it.
+   A plate, exactly as the regions further down get a plate — white keyline,
+   black interior, wordmark — placed in screen terms from the same frame the
+   camera uses, because it is HTML and the diagram is not. It has gone before
+   the camera moves, so it never has to track anything.
+
+   Hidden unless the intro actually runs, so reduced motion and a returning
+   visitor never see it. */
+.ln-box{position:absolute; inset:0; z-index:3; pointer-events:none;}
+.ln-box-panel{position:absolute; left:var(--px,50%); top:var(--py,50%);
+  transform:translateY(-50%); opacity:0;
+  max-width:calc(100% - var(--px,50%) - var(--pad));
+  background:#000; color:#fff; border:2px solid #fff;
+  padding:clamp(12px,1.7vw,20px) clamp(16px,2.2vw,28px);
+  font-weight:700; letter-spacing:-.045em; line-height:1.0;
+  /* Sized from the room the line leaves, not from the viewport. On portrait
+     the frame is always 880 units wide, so the plate always starts at ~29% of
+     the screen — which makes the space to its right a fixed fraction, and the
+     largest type that fits a linear function of it. A plain vw clamp pinned to
+     its floor on every phone and left a third of the frame empty. */
+  font-size:clamp(22px, calc(12vw - 9px), 56px);}
 .ln-box-l{display:block; white-space:nowrap;}
 .ln-box .ring{display:inline-block; width:.578em; height:.578em; vertical-align:-.032em;}
 .ln-box .ring svg{display:block; overflow:visible;}
