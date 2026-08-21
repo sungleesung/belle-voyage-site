@@ -40,35 +40,39 @@ export function Line() {
      the intro hands over, because then the scroll owns the camera. */
   const reframe = useRef<(() => void) | null>(null);
 
-  /* The frame follows the viewport shape so the line is never cropped. */
+  /* The frame follows the viewport shape so the line is never cropped.
+
+     Declared out here and called from the LAYOUT effect as well as from resize.
+     The markup ships an SSR viewBox that is only a placeholder; if the only
+     thing that replaces it is a passive effect, the first composited frame
+     shows the drawing at the placeholder's scale while the plate — HTML, placed
+     from the real frame — has already been positioned for the true one, and
+     they disagree for a frame. */
+  const fit = () => {
+    const el = svg.current; if (!el) return;
+    const r = el.getBoundingClientRect();
+    capped.current = capPan(r.width, r.height);
+    const f = frame(r.width, r.height);
+    el.setAttribute("viewBox", `${f.x} ${f.y} ${f.w} ${f.h}`);
+    /* Nothing is tweening during the held beat, so without this a resize leaves
+       the camera and the plate placed for the frame that has just gone. */
+    reframe.current?.();
+    fitPlate.current?.();
+  };
+  const fitPlate = useRef<(() => void) | null>(null);
+
   useEffect(() => {
-    const fit = () => {
-      const el = svg.current; if (!el) return;
-      const r = el.getBoundingClientRect();
-      capped.current = capPan(r.width, r.height);
-      const f = frame(r.width, r.height);
-      el.setAttribute("viewBox", `${f.x} ${f.y} ${f.w} ${f.h}`);
-      /* The intro's depth is derived from the viewport. During the held beat
-         nothing is tweening, so without this a rotation leaves the camera at a
-         scale computed for the old frame and the red no longer reaches the
-         edges. */
-      reframe.current?.();
-    };
-    fit();
     const ro = new ResizeObserver(fit);
     if (svg.current) ro.observe(svg.current);
     addEventListener("resize", fit);
     return () => { ro.disconnect(); removeEventListener("resize", fit); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useIsoLayout(() => {
+    /* Before .ready, so nothing is ever shown at the placeholder scale. */
+    fit();
     svg.current?.classList.add("ready");
-    /* Layout effects run before the fitting effect, so seed it here too —
-       otherwise the first painted frame uses the uncapped pan. */
-    if (svg.current) {
-      const r0 = svg.current.getBoundingClientRect();
-      capped.current = capPan(r0.width, r0.height);
-    }
     if (reduced()) return;
     gsap.registerPlugin(ScrollTrigger);
     document.documentElement.classList.add("motion");
@@ -110,8 +114,14 @@ export function Line() {
         gsap.set(".ln-flyby", { opacity: 0 });
       };
       /* The plate is HTML, so it is placed in screen terms from the same frame
-         the camera uses. It has faded before the camera moves, so it never has
-         to track anything — only survive a resize. */
+         the camera uses. The camera does start moving 200ms before the plate has
+         finished fading, and the plate does not follow it — by then it is under
+         20% opacity and the drift is 3px, but anything that retimes either tween
+         has to keep that true.
+
+         Placement is cheap and idempotent, so it can run every ride frame.
+         Fitting the type is not — it reads layout — so that runs only when the
+         frame actually changes. */
       const placePlate = () => {
         const el = box.current;
         if (!el) return;
@@ -119,6 +129,34 @@ export function Line() {
         el.style.setProperty("--px",
           `${((INTRO_ANCHOR.x + PLATE_GAP) - f.x) / f.w * 100}%`);
         el.style.setProperty("--py", `${(INTRO_ANCHOR.y - f.y) / f.h * 100}%`);
+      };
+      /* max-width cannot shrink the wordmark — the lines are nowrap, so a
+         constrained box just overflows. The font-size clamp was the only real
+         defence and it is a function of width alone, while the room the line
+         leaves depends on the aspect ratio too: on a short, wide frame the
+         wordmark ran out through its own keyline. Measuring the rendered text
+         is exact, and survives the font falling back to Arial on Windows,
+         which no hand-tuned clamp would. */
+      fitPlate.current = () => {
+        const pn = box.current?.querySelector<HTMLElement>(".ln-box-panel");
+        if (!pn) return;
+        pn.style.removeProperty("font-size");
+        /* Range, not scrollWidth. On a block with visible overflow scrollWidth
+           reports the layout width and simply does not see text spilling out of
+           it — the exact reading that hid this in the first place. */
+        const rng = document.createRange();
+        let widest = 0;
+        pn.querySelectorAll<HTMLElement>(".ln-box-l").forEach((n) => {
+          rng.selectNodeContents(n);
+          widest = Math.max(widest, rng.getBoundingClientRect().width);
+        });
+        const cs = getComputedStyle(pn);
+        const room = pn.clientWidth
+          - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+        if (widest > room && room > 0) {
+          const now = parseFloat(getComputedStyle(pn).fontSize);
+          pn.style.fontSize = `${Math.max(15, now * (room / widest))}px`;
+        }
       };
       const intro = { u: seen ? 1 : LEAD / IL };
       if (seen) settle();
@@ -130,6 +168,7 @@ export function Line() {
         placePlate();
       };
       runIntro();
+      fitPlate.current();
 
       if (!seen) {
         getLenis()?.stop();
@@ -259,6 +298,7 @@ export function Line() {
 
     return () => {
       reframe.current = null;
+      fitPlate.current = null;
       ctx.revert();
       document.documentElement.classList.remove("motion", "holding");
     };

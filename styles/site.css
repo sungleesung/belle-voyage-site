@@ -56,8 +56,9 @@ html.menu-open, html.menu-open body{overflow:hidden;}
 /* The opening: the line down the left with its first station named beside it.
    A plate, exactly as the regions further down get a plate — white keyline,
    black interior, wordmark — placed in screen terms from the same frame the
-   camera uses, because it is HTML and the diagram is not. It has gone before
-   the camera moves, so it never has to track anything.
+   camera uses, because it is HTML and the diagram is not. The type is then
+   measured and fitted in JS: these lines are nowrap, so max-width cannot shrink
+   them, it only lets them overflow.
 
    Hidden unless the intro actually runs, so reduced motion and a returning
    visitor never see it. */
