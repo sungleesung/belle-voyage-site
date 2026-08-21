@@ -102,6 +102,14 @@ export const FRAMES: { at: number; x: number; y: number }[] = [
   { at: 1.00, x: -330, y:  -980 },   // so the black opens outward, not sideways
 ];
 
+/* Where inside the pin the scroll is allowed to rest: the landing, and the
+   frame that holds the heading and all three regions together. Everything
+   between them is a transition — a half-drawn wipe, a half-grown swallow — and
+   1 is deliberately absent: the pin ends on solid black with the contact sheet
+   still below the fold, which is the one place worth never stopping. The rest
+   after the regions is the contact sheet itself, which is past the pin. */
+export const REST_P: number[] = [0, 0.46];
+
 /* Monotone cubic Hermite (Fritsch–Carlson).
    Linear interpolation makes every waypoint a velocity step — the old table
    slammed to a stop for 561px then fired sideways at 6.3x its previous top

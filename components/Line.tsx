@@ -3,7 +3,7 @@ import { useEffect, useLayoutEffect, useRef } from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import {
-  RUN, ONWARD, INTRO, FLYBY, LEAD, INTRO_ANCHOR, PLATE_GAP,
+  RUN, ONWARD, INTRO, FLYBY, LEAD, INTRO_ANCHOR, PLATE_GAP, REST_P,
   A, B, C, STOPS, REGIONS, STROKE,
   onDiag, d, dRound, frame, cameraAt, capPan, REGIONS_TITLE_Y,
 } from "@/lib/line";
@@ -239,6 +239,75 @@ export function Line() {
         },
       });
 
+      /* ── settling ────────────────────────────────────────────────
+         Three places are worth standing in: the landing, the regions, and the
+         contact sheet. Everything between is a transition, so when the scroll
+         goes quiet it eases onto the nearest of the three rather than staying
+         wherever the wheel ran out.
+
+         Against absolute scroll positions rather than ScrollTrigger's own snap,
+         because two of the three live inside the pin and one lives past it, and
+         a trigger's snap cannot reach outside its own range. */
+      const restAt = () => {
+        const max = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+        const out: number[] = [0];
+        const st = tl.scrollTrigger;
+        if (st) REST_P.forEach((q) => out.push(st.start + (st.end - st.start) * q));
+        document.querySelectorAll<HTMLElement>(".ct, .ft").forEach((el) =>
+          out.push(el.getBoundingClientRect().top + window.scrollY));
+        /* Clamped before dedupe: a rest point past the end of the document can
+           never be reached, and the settle would retry against it forever. */
+        return [...new Set(out.map((v) => Math.round(Math.min(max, Math.max(0, v)))))];
+      };
+
+      let idle: ReturnType<typeof setTimeout> | undefined;
+      let touching = false;
+      let lastY = 0, dir = 1;
+      const settleScroll = () => {
+        const lenis = getLenis();
+        /* Not mid-gesture, not under an open overlay, not during the ride. */
+        if (!lenis || touching || getView() || !landed) return;
+        const y = window.scrollY;
+        const pts = restAt().sort((a, b) => a - b);
+        const lo = pts.filter((q) => q <= y).pop() ?? pts[0];
+        const hi = pts.find((q) => q >= y) ?? pts[pts.length - 1];
+        if (hi === lo) return;
+        /* Settles the way you were already going. Nearest-point snapping drags
+           you back over a screen and a half if you pause halfway through the
+           swallow, which is the opposite of what pausing means. The 0.18 is
+           hysteresis: nudge the wheel and you stay put rather than being fired
+           at the next stop. */
+        const f = (y - lo) / (hi - lo);
+        const to = dir > 0 ? (f > 0.18 ? hi : lo) : (f < 0.82 ? lo : hi);
+        const gap = Math.abs(to - y);
+        /* Already there. This is also what stops the settle driving itself:
+           its own animation emits the scroll events that reset the timer, and
+           when they stop it lands here and does nothing. */
+        if (gap < 2) return;
+        lenis.scrollTo(to, {
+          duration: Math.min(1, 0.32 + (gap / window.innerHeight) * 0.6),
+          easing: (x: number) => 1 - Math.pow(1 - x, 3),
+        });
+      };
+      const onScroll = () => {
+        const y = window.scrollY;
+        if (y !== lastY) { dir = y > lastY ? 1 : -1; lastY = y; }
+        clearTimeout(idle); idle = setTimeout(settleScroll, 180);
+      };
+      const onDown = () => { touching = true; clearTimeout(idle); };
+      const onUp = () => { touching = false; onScroll(); };
+      addEventListener("scroll", onScroll, { passive: true });
+      addEventListener("touchstart", onDown, { passive: true });
+      addEventListener("touchend", onUp, { passive: true });
+      addEventListener("touchcancel", onUp, { passive: true });
+      const stopSettling = () => {
+        clearTimeout(idle);
+        removeEventListener("scroll", onScroll);
+        removeEventListener("touchstart", onDown);
+        removeEventListener("touchend", onUp);
+        removeEventListener("touchcancel", onUp);
+      };
+
       tl.to(s, { p: 1, duration: 10, ease: "none", onUpdate: move, immediateRender: false }, 0)
         /* White sheets down over the black, and the line flips as the edge
            crosses it — so the change reads as caused by the wipe. */
@@ -293,7 +362,7 @@ export function Line() {
           },
           duration: 1.8, ease: "power2.in",
         }, 8.2);
-      return () => closeIntro();
+      return () => { closeIntro(); stopSettling(); };
     }, root);
 
     return () => {
