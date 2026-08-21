@@ -106,8 +106,11 @@ export const FRAMES: { at: number; x: number; y: number }[] = [
    frame that holds the heading and all three regions together. Everything
    between them is a transition — a half-drawn wipe, a half-grown swallow — and
    1 is deliberately absent: the pin ends on solid black with the contact sheet
-   still below the fold, which is the one place worth never stopping. The rest
-   after the regions is the contact sheet itself, which is past the pin. */
+   still below the fold, which is the one place worth never stopping. The last
+   rest is the top of the contact sheet, just past the pin — and it is the last
+   one there is. Below it the page is ordinary reading and typing, and settling
+   over content taller than the frame puts the submit button somewhere the user
+   is not allowed to stand. */
 export const REST_P: number[] = [0, 0.46];
 
 /* Monotone cubic Hermite (Fritsch–Carlson).

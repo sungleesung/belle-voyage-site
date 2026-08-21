@@ -9,7 +9,7 @@ import {
 } from "@/lib/line";
 import type { P } from "@/lib/line";
 import { getLenis } from "@/lib/lenis";
-import { getView, openContact } from "@/lib/overlay";
+import { getView, onView, openContact } from "@/lib/overlay";
 
 /* Positioning the camera must happen before the browser paints, or the first
    frame is the landing. useLayoutEffect does; useEffect does not. */
@@ -253,22 +253,29 @@ export function Line() {
         const out: number[] = [0];
         const st = tl.scrollTrigger;
         if (st) REST_P.forEach((q) => out.push(st.start + (st.end - st.start) * q));
-        document.querySelectorAll<HTMLElement>(".ct, .ft").forEach((el) =>
-          out.push(el.getBoundingClientRect().top + window.scrollY));
+        const ct = document.querySelector<HTMLElement>(".ct");
+        if (ct) out.push(ct.getBoundingClientRect().top + window.scrollY);
         /* Clamped before dedupe: a rest point past the end of the document can
            never be reached, and the settle would retry against it forever. */
-        return [...new Set(out.map((v) => Math.round(Math.min(max, Math.max(0, v)))))];
+        return [...new Set(out.map((v) => Math.round(Math.min(max, Math.max(0, v)))))]
+          .sort((a, b) => a - b);
       };
 
       let idle: ReturnType<typeof setTimeout> | undefined;
       let touching = false;
-      let lastY = 0, dir = 1;
+      let lastY = window.scrollY, dir = 1;
       const settleScroll = () => {
         const lenis = getLenis();
         /* Not mid-gesture, not under an open overlay, not during the ride. */
         if (!lenis || touching || getView() || !landed) return;
         const y = window.scrollY;
-        const pts = restAt().sort((a, b) => a - b);
+        const pts = restAt();
+        /* The contact sheet is the last rest there is. Below it sits a form
+           and a footer, both taller than the frame on a phone, and settling
+           over them left the submit button and both audience paths with no
+           scroll position the user was allowed to stop at. Read-and-type
+           content scrolls freely. */
+        if (y > pts[pts.length - 1] + 4) return;
         const lo = pts.filter((q) => q <= y).pop() ?? pts[0];
         const hi = pts.find((q) => q >= y) ?? pts[pts.length - 1];
         if (hi === lo) return;
@@ -295,12 +302,23 @@ export function Line() {
         clearTimeout(idle); idle = setTimeout(settleScroll, 180);
       };
       const onDown = () => { touching = true; clearTimeout(idle); };
-      const onUp = () => { touching = false; onScroll(); };
+      /* One touchend fires per finger. Clearing on the first one scheduled a
+         settle while a finger was still down, and the page moved under it. */
+      const onUp = (e: TouchEvent) => {
+        if (e.touches.length) return;
+        touching = false;
+        onScroll();
+      };
       addEventListener("scroll", onScroll, { passive: true });
       addEventListener("touchstart", onDown, { passive: true });
       addEventListener("touchend", onUp, { passive: true });
       addEventListener("touchcancel", onUp, { passive: true });
+      /* An overlay blocks the settle, and Lenis.stop() kills one already in
+         flight — so opening the menu mid-transition parked the page on a
+         half-run reveal and left it there. Closing re-arms it. */
+      const offView = onView((v) => { if (!v) onScroll(); });
       const stopSettling = () => {
+        offView();
         clearTimeout(idle);
         removeEventListener("scroll", onScroll);
         removeEventListener("touchstart", onDown);
