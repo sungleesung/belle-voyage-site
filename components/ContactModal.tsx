@@ -29,9 +29,16 @@ function Glyph({ shape }: { shape: string }) {
 
 export function ContactModal() {
   const [open, setOpen] = useState(false);
+  /* A dialog's children stay mounted when it closes, so a form left on its
+     confirmation was still on it the next time the popup opened. Keying the
+     form to the opening gives each one a blank sheet. */
+  const [opening, setOpening] = useState(0);
   const dlg = useRef<HTMLDialogElement>(null);
 
-  useEffect(() => onView((v) => setOpen(v === "contact")), []);
+  useEffect(() => onView((v) => {
+    setOpen(v === "contact");
+    if (v === "contact") setOpening((n) => n + 1);
+  }), []);
 
   /* A native dialog carries the focus trap, the Escape key and the inert
      background itself. Hand-rolling those is where modals usually go wrong. */
@@ -66,7 +73,7 @@ export function ContactModal() {
           </button>
           <div className="cm-panel">
             <h2 id="cm-title">Get in touch</h2>
-            <EnquiryForm />
+            <EnquiryForm key={opening} />
           </div>
         </div>
         {STATIONS.map((s, i) => (

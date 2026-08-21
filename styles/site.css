@@ -161,8 +161,17 @@ html.menu-open, html.menu-open body{overflow:hidden;}
 
 .ct-err{color:#FFD6D0; font-size:var(--t-body); margin:0;
   border-left:2px solid var(--ca); padding-left:12px;}
-.ct-done{font-size:clamp(19px,2.2vw,28px); letter-spacing:-.02em; line-height:1.35;
-  max-width:34ch; margin:0; outline:none;}
+.ct-done{display:grid; gap:clamp(18px,2.6dvh,26px); justify-items:start;
+  max-width:34ch; outline:none;}
+.ct-done p{font-size:clamp(19px,2.2vw,28px); letter-spacing:-.02em; line-height:1.35;
+  margin:0;}
+.ct-again{display:inline-flex; align-items:center; gap:9px; padding:12px 0;
+  min-height:44px; background:none; border:0; cursor:pointer; color:#fff;
+  font:inherit; font-size:var(--t-body); font-weight:700; letter-spacing:-.02em;
+  text-decoration:underline; text-underline-offset:5px;
+  transition:opacity var(--t-4) var(--e-line);}
+.ct-again:hover{opacity:.65;}
+.ct-f [aria-invalid="true"]{border-bottom-color:var(--ca);}
 .ct-send svg{transition:transform var(--t-4) var(--e-arrive);}
 .ct-send:hover svg{transform:translateX(4px);}
 
