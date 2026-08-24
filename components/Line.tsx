@@ -577,7 +577,11 @@ export function Line() {
           {/* the regions — colours, because these ARE the regions */}
           {REGIONS.map((r) => (
             <g key={r.code} className={`ln-region ln-region-${r.code}`} transform={`translate(${B.x} ${r.y})`}>
-              <a href={r.href} aria-label={`Properties in ${r.name}`}>
+              {/* Out of the tab order and out of the accessibility tree: it
+                  lives inside a pinned drawing the browser cannot scroll to, so
+                  focus could reach it and then never show it. The same three
+                  links are in .ln-fallback, which can be reached. */}
+              <a href={r.href} tabIndex={-1} aria-hidden="true">
                 <circle r="34" fill={r.colour} stroke="#000" strokeWidth="8" />
                 <rect className="ln-hit" x="72" y="-60" width="446" height="120" fill="transparent" />
                 <rect className="ln-plate" x="78" y="-46" width="430" height="92" rx="3"

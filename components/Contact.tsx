@@ -1,5 +1,6 @@
 import { Arrow } from "./Arrow";
 import { EnquiryForm } from "./EnquiryForm";
+import { CONTACT } from "./Doc";
 
 /* The site map, laid out as a map rather than a row of links. */
 const MAP = [
@@ -62,6 +63,9 @@ export function Contact() {
             </div>
           ))}
         </nav>
+        <p className="ft-reach">
+          <a href={`mailto:${CONTACT}`}>{CONTACT}</a>
+        </p>
         <p className="ft-credit">
           © {new Date().getFullYear()} Belle Voyage Estates ·
           Designed by Sung — <a href="mailto:hello@sungshil.com">hello@sungshil.com</a>

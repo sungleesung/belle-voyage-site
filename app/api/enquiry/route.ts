@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createHash } from "node:crypto";
 import { mailConfigured, sendEnquiry } from "@/lib/mail";
 
 /* The contact form's only destination. It refuses rather than pretends: a form
@@ -36,7 +37,11 @@ function originOk(req: NextRequest) {
 const hits = new Map<string, number[]>();
 const RATE = { max: 5, window: 60 * 60 * 1000 };
 function tooMany(req: NextRequest) {
-  const ip = (req.headers.get("x-forwarded-for") || "").split(",")[0]?.trim() || "0.0.0.0";
+  const raw = (req.headers.get("x-forwarded-for") || "").split(",")[0]?.trim() || "0.0.0.0";
+  /* One-way, so what is held is a counter against a hash and never an address.
+     The privacy policy says exactly this, so it has to stay true. */
+  const ip = createHash("sha256")
+    .update(raw + (process.env.IP_SALT || "belle-voyage")).digest("hex");
   const now = Date.now();
   if (hits.size > 5000) hits.clear();
   const seen = (hits.get(ip) || []).filter((t) => now - t < RATE.window);
@@ -107,7 +112,12 @@ export async function POST(req: NextRequest) {
   const sent = await sendEnquiry({ name, email, subject, message });
   if (!sent.ok) {
     console.error("[enquiry:unsent]", JSON.stringify({ name, email, subject, message }));
-    return fail("We could not send that just now. Please try again in a moment.", 502);
+    const to = process.env.CONTACT_TO;
+    return fail(
+      to ? `We could not send that just now. Please try again, or email ${to}.`
+         : "We could not send that just now. Please try again in a moment.",
+      502,
+    );
   }
   return NextResponse.json({ ok: true });
 }
