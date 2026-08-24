@@ -8,7 +8,8 @@ import { Map as MLMap, Marker, LngLatBounds, setWorkerUrl } from "maplibre-gl";
    overridden in site.css. */
 import "maplibre-gl/dist/maplibre-gl.css";
 import { Arrow } from "./Arrow";
-import { MARKETS, PROPERTIES, shapeOf, summary, type Market, type Property } from "@/lib/properties";
+import { MARKETS, PROPERTIES, monthly, priceOf, shapeOf, summary,
+  type Kind, type Market, type Property } from "@/lib/properties";
 
 /* Land, water and borders. Nothing else — no basemap labels, no roads, no
    landuse. A photographic basemap would swallow the stations and undo the
@@ -49,18 +50,69 @@ function glyph(kind: string, colour: string) {
   return el;
 }
 
+/* Airbnb's shape, minus the parts that mean nothing for property: type of
+   place, a price range over a histogram, and rooms as steppers. Their amenity
+   and host-language sections do not transfer — a letting agency's equivalent
+   of "has a hair dryer" is the floor area, which is already on the row. */
+const LETTING: { key: Kind | "any"; label: string }[] = [
+  { key: "any", label: "Any" },
+  { key: "standard", label: "Long let" },
+  { key: "short", label: "Short stay" },
+  { key: "flagship", label: "Flagship" },
+];
+const STEPS = ["Any", "1+", "2+", "3+", "4+", "5+"];
+
 export function Properties({ initial }: { initial: Market | "all" }) {
   const [market, setMarket] = useState<Market | "all">(initial);
+  const [kind, setKind] = useState<Kind | "any">("any");
+  const [beds, setBeds] = useState(0);
+  const [baths, setBaths] = useState(0);
+  const [lo, setLo] = useState<number | null>(null);
+  const [hi, setHi] = useState<number | null>(null);
+  const [panel, setPanel] = useState(false);
+  const dlg = useRef<HTMLDialogElement>(null);
   const [sel, setSel] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
   const host = useRef<HTMLDivElement>(null);
   const map = useRef<InstanceType<typeof MLMap> | null>(null);
   const pins = useRef(new globalThis.Map<string, InstanceType<typeof Marker>>());
 
-  const shown = useMemo(
-    () => (market === "all" ? PROPERTIES : PROPERTIES.filter((p) => p.market === market)),
-    [market],
-  );
+  /* The slider's domain is every property, not the filtered set, so the handles
+     do not move under you as you filter. */
+  const [floor, ceil] = useMemo(() => {
+    const v = PROPERTIES.map(monthly);
+    return [Math.floor(Math.min(...v) / 100) * 100, Math.ceil(Math.max(...v) / 100) * 100];
+  }, []);
+  const min = lo ?? floor, max = hi ?? ceil;
+
+  const shown = useMemo(() => PROPERTIES.filter((p) =>
+    (market === "all" || p.market === market) &&
+    (kind === "any" || p.kind === kind) &&
+    (beds === 0 || (p.beds ?? 0) >= beds) &&
+    (baths === 0 || p.baths >= baths) &&
+    monthly(p) >= min && monthly(p) <= max,
+  ), [market, kind, beds, baths, min, max]);
+
+  /* The distribution behind the handles, as Airbnb draws it. */
+  const bars = useMemo(() => {
+    const n = 22, out = new Array(n).fill(0);
+    PROPERTIES.forEach((p) => {
+      const i = Math.min(n - 1, Math.floor(((monthly(p) - floor) / (ceil - floor)) * n));
+      out[i] += 1;
+    });
+    const peak = Math.max(1, ...out);
+    return out.map((c, i) => ({ h: c / peak, on: floor + ((i + 0.5) / n) * (ceil - floor) }));
+  }, [floor, ceil]);
+
+  const active = (kind !== "any" ? 1 : 0) + (beds ? 1 : 0) + (baths ? 1 : 0) +
+    (lo !== null || hi !== null ? 1 : 0);
+  const clear = () => { setKind("any"); setBeds(0); setBaths(0); setLo(null); setHi(null); };
+
+  useEffect(() => {
+    const el = dlg.current; if (!el) return;
+    if (panel && !el.open) el.showModal();
+    if (!panel && el.open) el.close();
+  }, [panel]);
 
   useEffect(() => {
     if (!host.current || map.current) return;
@@ -144,11 +196,93 @@ export function Properties({ initial }: { initial: Market | "all" }) {
               {mk.name}<span>{PROPERTIES.filter((p) => p.market === mk.code).length}</span>
             </button>
           ))}
+          <button type="button" className="pr-more" onClick={() => setPanel(true)}
+            aria-haspopup="dialog">
+            Filters{active > 0 && <span className="pr-badge">{active}</span>}
+          </button>
         </div>
       </header>
 
+      <dialog ref={dlg} className="fl" aria-labelledby="fl-title"
+        onClose={() => setPanel(false)}
+        onClick={(e) => { if (e.target === dlg.current) setPanel(false); }}>
+        <div className="fl-panel">
+          <header className="fl-head">
+            <h2 id="fl-title">Filters</h2>
+            <button type="button" className="fl-x" onClick={() => setPanel(false)}>
+              <span className="sr">Close</span>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5 19 19M19 5 5 19" /></svg>
+            </button>
+          </header>
+
+          <section className="fl-sec">
+            <h3>Type of letting</h3>
+            <div className="fl-seg" role="group" aria-label="Type of letting">
+              {LETTING.map((l) => (
+                <button key={l.key} type="button" data-on={kind === l.key}
+                  onClick={() => setKind(l.key)}>{l.label}</button>
+              ))}
+            </div>
+          </section>
+
+          <section className="fl-sec">
+            <h3>Price range</h3>
+            <p className="fl-hint">
+              Monthly, in each property&rsquo;s own currency. A nightly rate is
+              counted as thirty nights.
+            </p>
+            <div className="fl-hist" aria-hidden="true">
+              {bars.map((b, i) => (
+                <i key={i} style={{ height: `${Math.max(6, b.h * 100)}%` }}
+                  data-on={b.on >= min && b.on <= max} />
+              ))}
+            </div>
+            <div className="fl-range">
+              <input type="range" min={floor} max={ceil} step={100} value={min}
+                aria-label="Minimum price"
+                onChange={(e) => setLo(Math.min(+e.target.value, max - 100))} />
+              <input type="range" min={floor} max={ceil} step={100} value={max}
+                aria-label="Maximum price"
+                onChange={(e) => setHi(Math.max(+e.target.value, min + 100))} />
+            </div>
+            <div className="fl-ends">
+              <span>{min.toLocaleString("en")}</span>
+              <span>{max.toLocaleString("en")}{max === ceil ? "+" : ""}</span>
+            </div>
+          </section>
+
+          <section className="fl-sec">
+            <h3>Rooms</h3>
+            {([["Bedrooms", beds, setBeds], ["Bathrooms", baths, setBaths]] as const).map(
+              ([label, val, set]) => (
+                <div className="fl-step" key={label}>
+                  <span>{label}</span>
+                  <button type="button" onClick={() => set(Math.max(0, val - 1))}
+                    disabled={val === 0} aria-label={`Fewer ${label.toLowerCase()}`}>&minus;</button>
+                  <b>{STEPS[val]}</b>
+                  <button type="button" onClick={() => set(Math.min(5, val + 1))}
+                    disabled={val === 5} aria-label={`More ${label.toLowerCase()}`}>+</button>
+                </div>
+              ))}
+          </section>
+
+          <footer className="fl-foot">
+            <button type="button" className="fl-clear" onClick={clear}>Clear all</button>
+            <button type="button" className="fl-show" onClick={() => setPanel(false)}>
+              Show {shown.length} {shown.length === 1 ? "property" : "properties"}
+            </button>
+          </footer>
+        </div>
+      </dialog>
+
       <div className="pr-body">
         <ol className="pr-list">
+          {!shown.length && (
+            <li className="pr-none">
+              <p>Nothing matches that yet.</p>
+              <button type="button" onClick={clear}>Clear the filters</button>
+            </li>
+          )}
           {shown.map((p: Property) => (
             <li key={p.id} id={`row-${p.id}`} data-on={sel === p.id}
               style={{ ["--c" as string]: MARKETS.find((x) => x.code === p.market)!.colour }}
@@ -160,7 +294,7 @@ export function Properties({ initial }: { initial: Market | "all" }) {
                 <span className="pr-name">{p.name}</span>
                 <span className="pr-city">{p.city}</span>
                 <span className="pr-spec">{summary(p)}</span>
-                <span className="pr-price">{p.price}</span>
+                <span className="pr-price">{priceOf(p)}</span>
                 <Arrow dir="right" size={19} />
               </button>
             </li>

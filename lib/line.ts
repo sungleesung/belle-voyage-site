@@ -92,6 +92,19 @@ export const ABOUT_CAM = {
   y: ABOUT_PARK.y - ABOUT_END.y,
 };
 
+/* ── the Properties branch ────────────────────────────────────
+   North from the Properties stop, in green. North rather than east on purpose:
+   the camera pans east through the regions, so an eastward branch would be
+   dragged straight across that section — this one leaves the frame on the left
+   the moment the pan starts, exactly as the About branch does, and is seen only
+   at the landing where it belongs. */
+export const PROPS_STOP: P = onDiag(0.24);
+export const PROPS_END: P = { x: PROPS_STOP.x, y: -2400 };
+/* Far enough that the line still fills the frame when the page takes over —
+   the journey ends in a navigation, not at a terminus. */
+export const PROPS_CAM = { x: 0, y: 1600 };
+
+
 export function dRound(pts: P[], r = 240) {
   if (pts.length < 3) return d(pts);
   let out = `M${pts[0].x} ${pts[0].y}`;

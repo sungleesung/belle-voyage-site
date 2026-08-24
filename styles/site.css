@@ -516,3 +516,99 @@ html.menu-open, html.menu-open body{overflow:hidden;}
   text-decoration:underline; text-underline-offset:5px;
   transition:opacity var(--t-4) var(--e-line);}
 .doc-go a:hover{opacity:.6;}
+
+/* ── filters ───────────────────────────────────────────────────
+   Airbnb's arrangement, in this type system: a modal, a segmented type, a
+   range over its own distribution, steppers for rooms, and a footer that says
+   how many are left rather than "apply". */
+.pr-more{--c:var(--ink);}
+.pr-badge{display:grid; place-items:center; min-width:20px; height:20px; padding:0 6px;
+  border-radius:var(--r-cap); background:var(--ink); color:var(--paper);
+  font-size:11px; font-weight:700; opacity:1;}
+.pr-more[data-on] .pr-badge{background:var(--paper); color:var(--ink);}
+
+.fl{width:100%; height:100%; max-width:none; max-height:none; inset:0; margin:0;
+  padding:var(--pad); border:0; background:transparent; overflow:visible;}
+.fl[open]{display:grid; place-items:center;}
+.fl::backdrop{background:color-mix(in srgb, var(--ink) 46%, transparent);
+  backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);}
+.fl-panel{width:min(560px,100%); max-height:calc(100dvh - var(--pad) * 2);
+  overflow-y:auto; background:var(--paper); color:var(--ink);
+  border:1px solid var(--rule); display:grid; align-content:start;}
+.fl-head{position:sticky; top:0; z-index:2; background:var(--paper);
+  border-bottom:1px solid var(--rule); padding:16px clamp(18px,3vw,28px);
+  display:flex; align-items:center; justify-content:space-between; gap:16px;}
+.fl-head h2{margin:0; font-size:clamp(19px,2vw,24px); letter-spacing:-.03em;}
+.fl-x{width:44px; height:44px; display:grid; place-items:center; padding:0;
+  background:none; border:0; cursor:pointer; color:var(--muted);}
+.fl-x:hover{color:var(--ink);}
+.fl-x svg{width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:2.2;
+  stroke-linecap:round;}
+.fl-sec{padding:clamp(18px,3dvh,26px) clamp(18px,3vw,28px);
+  border-bottom:1px solid var(--rule); display:grid; gap:14px;}
+.fl-sec h3{margin:0; font-size:var(--t-warn); font-weight:700; letter-spacing:.14em;
+  text-transform:uppercase; color:var(--muted);}
+.fl-hint{margin:-4px 0 0; font-size:var(--t-warn); color:var(--muted); line-height:1.45;}
+
+.fl-seg{display:flex; flex-wrap:wrap; gap:8px;}
+.fl-seg button{padding:10px 16px; min-height:44px; cursor:pointer; font:inherit;
+  font-weight:700; font-size:var(--t-body); letter-spacing:-.02em;
+  border:2px solid var(--rule); border-radius:var(--r-cap);
+  background:none; color:var(--ink);
+  transition:border-color var(--t-4) var(--e-line), background var(--t-4) var(--e-line);}
+.fl-seg button[data-on="true"]{background:var(--ink); color:var(--paper); border-color:var(--ink);}
+
+/* The distribution the handles run over — dimmed outside the chosen range, so
+   the control shows what it is doing to the set. */
+.fl-hist{display:flex; align-items:flex-end; gap:2px; height:64px;}
+.fl-hist i{flex:1; background:var(--rule); border-radius:1px 1px 0 0;
+  transition:background var(--t-4) var(--e-line);}
+.fl-hist i[data-on="true"]{background:var(--us);}
+.fl-range{position:relative; height:34px;}
+.fl-range input{position:absolute; inset:0; width:100%; margin:0; background:none;
+  pointer-events:none; -webkit-appearance:none; appearance:none;}
+.fl-range input::-webkit-slider-runnable-track{height:2px; background:var(--rule);}
+.fl-range input::-moz-range-track{height:2px; background:var(--rule);}
+.fl-range input::-webkit-slider-thumb{-webkit-appearance:none; appearance:none;
+  pointer-events:auto; width:26px; height:26px; margin-top:-12px; cursor:grab;
+  border-radius:var(--r-globe); background:var(--paper);
+  border:3px solid var(--us); box-shadow:0 1px 4px rgba(0,0,0,.28);}
+.fl-range input::-moz-range-thumb{pointer-events:auto; width:26px; height:26px;
+  cursor:grab; border-radius:var(--r-globe); background:var(--paper);
+  border:3px solid var(--us);}
+.fl-range input:focus-visible::-webkit-slider-thumb{outline:2px solid var(--ink);
+  outline-offset:2px;}
+.fl-ends{display:flex; justify-content:space-between; font-size:var(--t-warn);
+  font-weight:700; font-variant-numeric:tabular-nums;}
+
+.fl-step{display:grid; grid-template-columns:1fr auto auto auto; align-items:center;
+  gap:12px; font-size:var(--t-body);}
+.fl-step b{min-width:44px; text-align:center; font-variant-numeric:tabular-nums;}
+.fl-step button{width:44px; height:44px; cursor:pointer; font:inherit; font-size:19px;
+  border:2px solid var(--rule); border-radius:var(--r-globe);
+  background:none; color:var(--ink);
+  transition:border-color var(--t-4) var(--e-line), opacity var(--t-4) var(--e-line);}
+.fl-step button:hover:not(:disabled){border-color:var(--ink);}
+.fl-step button:disabled{opacity:.32; cursor:default;}
+
+.fl-foot{position:sticky; bottom:0; background:var(--paper);
+  border-top:1px solid var(--rule); padding:14px clamp(18px,3vw,28px);
+  display:flex; align-items:center; justify-content:space-between; gap:16px;}
+.fl-clear{padding:12px 0; min-height:44px; background:none; border:0; cursor:pointer;
+  font:inherit; font-weight:700; font-size:var(--t-body); color:var(--ink);
+  text-decoration:underline; text-underline-offset:4px;}
+.fl-show{padding:14px 24px; min-height:44px; cursor:pointer; font:inherit;
+  font-weight:700; font-size:var(--t-body); letter-spacing:-.02em;
+  border:0; border-radius:var(--r-tile); background:var(--ink); color:var(--paper);}
+.fl-show:hover{opacity:.85;}
+
+.pr-none{padding:clamp(28px,6dvh,54px) var(--pad); display:grid; gap:14px;
+  justify-items:start;}
+.pr-none p{margin:0; font-size:clamp(17px,1.6vw,21px); font-weight:700;
+  letter-spacing:-.025em;}
+.pr-none button{padding:12px 0; min-height:44px; background:none; border:0;
+  cursor:pointer; font:inherit; font-weight:700; font-size:var(--t-body);
+  color:var(--ink); text-decoration:underline; text-underline-offset:4px;}
+@media(prefers-reduced-motion:reduce){
+  .fl-seg button, .fl-hist i, .fl-step button{transition:none;}
+}

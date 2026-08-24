@@ -4,7 +4,7 @@ import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import {
   RUN, ONWARD, INTRO, FLYBY, LEAD, INTRO_ANCHOR, PLATE_GAP, REST_P,
-  ABOUT_STOP, ABOUT_END, ABOUT_CAM,
+  ABOUT_STOP, ABOUT_END, ABOUT_CAM, PROPS_STOP, PROPS_END, PROPS_CAM,
   A, B, C, STOPS, REGIONS, STROKE,
   onDiag, d, dRound, frame, cameraAt, capPan, REGIONS_TITLE_Y,
 } from "@/lib/line";
@@ -348,11 +348,38 @@ export function Line() {
           } });
       };
 
+      /* Properties is a page, so its branch is a departure rather than an
+         excursion: the camera runs north along the green line and the page
+         takes over as it goes. Accelerating, because it is leaving. */
+      const goProps = () => {
+        if (away.live || !landed) return;
+        away.live = true;
+        contain(true);
+        getLenis()?.stop();
+        /* Warmed while the camera travels, so the end of the line is the page
+           rather than a white flash. */
+        const pre = document.createElement("link");
+        pre.rel = "prefetch"; pre.href = "/properties";
+        document.head.appendChild(pre);
+        gsap.to(away, { x: PROPS_CAM.x, y: PROPS_CAM.y, duration: 0.95,
+          ease: "power2.in", onUpdate: render,
+          onComplete: () => { location.href = "/properties"; } });
+      };
+
       const onAboutClick = (e: MouseEvent) => {
         /* Leave cmd/ctrl/shift-click and any non-primary button alone, so
            "open in new tab" still opens a tab. */
         if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
-        const a = (e.target as Element | null)?.closest?.('a[href="#about"]');
+        const t = e.target as Element | null;
+        /* Only the stop on the diagonal departs along the green line — the
+           menu and footer links to the same page are ordinary navigation. */
+        if (t?.closest?.('.ln-stop a[href="/properties"]')) {
+          e.preventDefault();
+          setView(null);
+          goProps();
+          return;
+        }
+        const a = t?.closest?.('a[href="#about"]');
         if (!a) return;
         e.preventDefault();
         setView(null);
@@ -544,6 +571,9 @@ export function Line() {
             fill="none" stroke="var(--eu)" strokeWidth={STROKE} strokeLinecap="round" />
           <circle className="ln-branch-end" cx={ABOUT_END.x} cy={ABOUT_END.y} r="30"
             fill="#000" stroke="var(--eu)" strokeWidth="9" />
+          <path className="ln-branch"
+            d={`M${PROPS_STOP.x} ${PROPS_STOP.y}V${PROPS_END.y}`}
+            fill="none" stroke="var(--us)" strokeWidth={STROKE} strokeLinecap="round" />
 
           <path ref={path} d={d(RUN)} fill="none" stroke="var(--ca)"
             strokeWidth={STROKE} strokeLinecap="round" strokeLinejoin="round" />
