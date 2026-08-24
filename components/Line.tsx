@@ -4,12 +4,21 @@ import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import {
   RUN, ONWARD, INTRO, FLYBY, LEAD, INTRO_ANCHOR, PLATE_GAP, REST_P,
+  ABOUT_STOP, ABOUT_END, ABOUT_CAM,
   A, B, C, STOPS, REGIONS, STROKE,
   onDiag, d, dRound, frame, cameraAt, capPan, REGIONS_TITLE_Y,
 } from "@/lib/line";
 import type { P } from "@/lib/line";
 import { getLenis } from "@/lib/lenis";
-import { getView, onView, openContact } from "@/lib/overlay";
+import { Arrow } from "./Arrow";
+
+/* Rendered twice — at the end of the branch, and flat for anyone without
+   motion — so there is one copy of the words, not two to drift. */
+const ABOUT_COPY = [
+  "Belle Voyage Estates was founded by Cira Vogler in Windsor, Ontario in 2024 with four properties across Europe and the UK. Since then, we\u2019ve expanded to North America across short and long-term rental properties, real estate wholesaling, and real estate development and management projects.",
+  "We strive to offer the best possible service to both our clients and their customers.",
+];
+import { getView, onView, openContact, setView } from "@/lib/overlay";
 
 /* Positioning the camera must happen before the browser paints, or the first
    frame is the landing. useLayoutEffect does; useEffect does not. */
@@ -82,7 +91,7 @@ export function Line() {
       const put = (x: number, y: number) =>
         cam.current?.setAttribute("transform", `translate(${x} ${y})`);
 
-      /* ── the opening ─────────────────────────────────────────────
+/* ── the opening ─────────────────────────────────────────────
          The line down the left with its first station named beside it: a stop
          and a plate, the same construction the regions use further down, so
          the first thing on screen is already the system rather than a title
@@ -129,6 +138,13 @@ export function Line() {
         el.style.setProperty("--px",
           `${((INTRO_ANCHOR.x + PLATE_GAP) - f.x) / f.w * 100}%`);
         el.style.setProperty("--py", `${(INTRO_ANCHOR.y - f.y) / f.h * 100}%`);
+        /* Where the branch sits on screen once parked, so the copy can hang
+           below it instead of across it. */
+        const ab = root.current?.querySelector<HTMLElement>(".ln-about");
+        ab?.style.setProperty("--ay",
+          `${((ABOUT_END.y + ABOUT_CAM.y) - f.y) / f.h * 100}%`);
+        ab?.style.setProperty("--ax",
+          `${((ABOUT_END.x + ABOUT_CAM.x) - f.x) / f.w * 100}%`);
       };
       /* max-width cannot shrink the wordmark — the lines are nowrap, so a
          constrained box just overflows. The font-size clamp was the only real
@@ -230,7 +246,14 @@ export function Line() {
          One scalar drives the camera; everything else keys off it. */
       const s = { p: 0 };
       let landed = !!seen;
-      const move = () => { if (!landed) return; const c = cameraAt(s.p, capped.current); put(c.x, c.y); };
+      /* The excursion west and the scroll south both move the same camera, so
+         they go through one renderer and add rather than fight. */
+      const away = { x: 0, y: 0 };
+      const render = () => {
+        const c = cameraAt(s.p, capped.current);
+        put(c.x + away.x, c.y + away.y);
+      };
+      const move = () => { if (!landed) return; render(); };
 
       const tl = gsap.timeline({
         scrollTrigger: {
@@ -238,6 +261,70 @@ export function Line() {
           pin: true, scrub: 0.35, invalidateOnRefresh: true,
         },
       });
+
+      /* ── the excursion west ──────────────────────────────────────
+         About is not a page, it is a stop on a branch — so reaching it is a
+         journey along that branch rather than a navigation away from it. The
+         branch is level, so this is a pure sideways pan and the camera tracks
+         the line exactly.
+
+         Delegated from the document, so every About link goes the same way:
+         the stop on the diagonal, the menu, the footer and the audience path
+         at the foot of the contact sheet. */
+      let atAbout = false;
+      const panel = () => root.current?.querySelector<HTMLElement>(".ln-about");
+      /* Coming back puts you at the junction, so that is where focus belongs —
+         not on whatever was clicked. Restoring focus to a footer link scrolled
+         the browser back down to it, undoing the return journey in one frame,
+         and the menu's link no longer exists by then anyway. */
+      const junction = () =>
+        root.current?.querySelector<HTMLElement>('.ln-stop a[href="#about"]');
+
+      const arrive = () => {
+        atAbout = true;
+        document.documentElement.classList.add("at-about");
+        gsap.to(away, { x: ABOUT_CAM.x, y: ABOUT_CAM.y, duration: 1.15, ease: "power2.inOut", onUpdate: render });
+        gsap.to(panel()!, { opacity: 1, duration: 0.5, ease: "power2.out", delay: 0.72,
+          onComplete: () => panel()?.focus() });
+      };
+      const goAbout = () => {
+        if (atAbout || !landed) return;
+        const lenis = getLenis();
+        /* The branch only exists at the landing, so come back up the line
+           first — from the footer this reads as retracing the route. */
+        if (window.scrollY > 4 && lenis) {
+          lenis.scrollTo(0, { duration: 0.8, easing: (x: number) => 1 - Math.pow(1 - x, 3),
+            onComplete: () => { lenis.stop(); arrive(); } });
+          return;
+        }
+        lenis?.stop();
+        arrive();
+      };
+      const leaveAbout = () => {
+        if (!atAbout) return;
+        atAbout = false;
+        gsap.to(panel()!, { opacity: 0, duration: 0.28, ease: "power2.in" });
+        gsap.to(away, { x: 0, y: 0, duration: 1, ease: "power2.inOut", onUpdate: render,
+          onComplete: () => {
+            document.documentElement.classList.remove("at-about");
+            if (!getView()) getLenis()?.start();
+            junction()?.focus({ preventScroll: true });
+          } });
+      };
+
+      const onAboutClick = (e: MouseEvent) => {
+        const a = (e.target as Element | null)?.closest?.('a[href="#about"]');
+        if (!a) return;
+        e.preventDefault();
+        setView(null);
+        goAbout();
+      };
+      const onAboutKey = (e: KeyboardEvent) => {
+        if (e.key === "Escape" && atAbout) leaveAbout();
+      };
+      addEventListener("click", onAboutClick);
+      addEventListener("keydown", onAboutKey);
+      root.current?.querySelector(".ln-back")?.addEventListener("click", leaveAbout);
 
       /* ── settling ────────────────────────────────────────────────
          Three places are worth standing in: the landing, the regions, and the
@@ -267,7 +354,7 @@ export function Line() {
       const settleScroll = () => {
         const lenis = getLenis();
         /* Not mid-gesture, not under an open overlay, not during the ride. */
-        if (!lenis || touching || getView() || !landed) return;
+        if (!lenis || touching || getView() || !landed || atAbout) return;
         const y = window.scrollY;
         const pts = restAt();
         /* The contact sheet is the last rest there is. Below it sits a form
@@ -319,6 +406,8 @@ export function Line() {
       const offView = onView((v) => { if (!v) onScroll(); });
       const stopSettling = () => {
         offView();
+        removeEventListener("click", onAboutClick);
+        removeEventListener("keydown", onAboutKey);
         clearTimeout(idle);
         removeEventListener("scroll", onScroll);
         removeEventListener("touchstart", onDown);
@@ -401,6 +490,14 @@ export function Line() {
         <g ref={cam}>
           {/* Measured, never painted — it is what the camera rides. */}
           <path ref={introPath} d={dRound(INTRO)} fill="none" stroke="none" />
+          {/* The About branch, under the trunk at the junction the way a
+              branch passes beneath the line it leaves. */}
+          <path className="ln-branch"
+            d={`M${ABOUT_STOP.x} ${ABOUT_STOP.y}H${ABOUT_END.x}`}
+            fill="none" stroke="var(--eu)" strokeWidth={STROKE} strokeLinecap="round" />
+          <circle className="ln-branch-end" cx={ABOUT_END.x} cy={ABOUT_END.y} r="30"
+            fill="#000" stroke="var(--eu)" strokeWidth="9" />
+
           <path ref={path} d={d(RUN)} fill="none" stroke="var(--ca)"
             strokeWidth={STROKE} strokeLinecap="round" strokeLinejoin="round" />
 
@@ -454,6 +551,19 @@ export function Line() {
       </svg>
       {/* The opening: the station on the line, named. Decorative — the
           masthead carries the real wordmark. */}
+      {/* At the end of the branch. Screen-space rather than in the drawing:
+          SVG text does not wrap, and anything drawn in the world scales with
+          the frame — a paragraph would be vast on a laptop and unreadable on
+          a phone. */}
+      <div className="ln-about" tabIndex={-1} role="region"
+        aria-label="About Belle Voyage Estates">
+        <h2>About</h2>
+        {ABOUT_COPY.map((t) => <p key={t.slice(0, 24)}>{t}</p>)}
+        <button type="button" className="ln-back">
+          <Arrow dir="left" size={18} /> Back to the line
+        </button>
+      </div>
+
       <div className="ln-box" ref={box} aria-hidden="true">
         <span className="ln-box-panel">
           <span className="ln-box-l">Belle&nbsp;V<i className="ring">
@@ -477,6 +587,14 @@ export function Line() {
         </a>
       ))}
     </nav>
+
+    {/* Without motion there is no journey west, so About is simply here, and
+        the #about link reaches it with no JavaScript at all. */}
+    <section className="ln-about-flat" id="about"
+      aria-label="About Belle Voyage Estates">
+      <h2>About</h2>
+      {ABOUT_COPY.map((t) => <p key={t.slice(0, 24)}>{t}</p>)}
+    </section>
     </>
   );
 }

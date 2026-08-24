@@ -10,7 +10,7 @@ const MAP = [
     { label: "Europe",          href: "/properties?market=eu" },
   ]},
   { head: "Company", links: [
-    { label: "About",           href: "/about" },
+    { label: "About",           href: "#about" },
     { label: "Owners",          href: "/owners" },
     { label: "Contact",         href: "#contact" },
   ]},
@@ -37,7 +37,7 @@ export function Contact() {
             <span className="ct-v">Management, letting and compliance</span>
             <Arrow dir="right" size={22} />
           </a>
-          <a className="ct-path" href="/about">
+          <a className="ct-path" href="#about">
             <span className="ct-k">I want to know more</span>
             <span className="ct-v">Who we are and how we work</span>
             <Arrow dir="right" size={22} />

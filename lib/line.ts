@@ -58,7 +58,7 @@ export const ONWARD: P[] = [{ x: A.x, y: A.y - 1700 }, A, B, C];
 /* Three stops on the diagonal. Shapes, not colours — this is navigation. */
 export const STOPS = [
   { t: 0.24, shape: "circle"   as const, label: "Properties", href: "/properties" },
-  { t: 0.50, shape: "square"   as const, label: "About",      href: "/about" },
+  { t: 0.50, shape: "square"   as const, label: "About",      href: "#about" },
   { t: 0.76, shape: "triangle" as const, label: "Contact",    href: "#contact" },
 ];
 
@@ -72,6 +72,25 @@ export const REGIONS = [
 
 export const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 export const onDiag = (t: number): P => ({ x: lerp(A.x, B.x, t), y: lerp(A.y, B.y, t) });
+
+/* ── the About branch ─────────────────────────────────────────
+   A second line leaving the About stop and running west, out of frame. Level,
+   on purpose: the frame's vertical centre is always 520 — SAFE's own centre,
+   whatever the viewport — so a branch at the About stop's height is centred
+   everywhere, and a camera following it is a pure sideways pan. The line and
+   the journey along it are one gesture rather than two. */
+export const ABOUT_STOP: P = onDiag(0.50);
+export const ABOUT_END: P = { x: -1000, y: ABOUT_STOP.y };
+/* Where the terminus parks in the frame. Left of centre, and lifted: the copy
+   goes BELOW the line, because a level line and a block of text both centred on
+   the frame occupy the same band and the line runs straight through the words.
+   The lift is what buys room underneath on a phone held sideways, where half a
+   frame is only 195px. */
+export const ABOUT_PARK = { x: 180, y: 340 };
+export const ABOUT_CAM = {
+  x: ABOUT_PARK.x - ABOUT_END.x,
+  y: ABOUT_PARK.y - ABOUT_END.y,
+};
 
 export function dRound(pts: P[], r = 240) {
   if (pts.length < 3) return d(pts);
