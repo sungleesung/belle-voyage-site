@@ -45,6 +45,9 @@ export function Line() {
   const sheet = useRef<HTMLDivElement>(null);
   const capped = useRef(false);
   const box = useRef<HTMLDivElement>(null);
+  /* Cached on fit so the per-frame placement never reads layout. */
+  const size = useRef({ w: 0, h: 0 });
+  const anchor = useRef<HTMLDivElement>(null);
   /* Set while the intro owns the camera, so a resize re-derives it. Null after
      the intro hands over, because then the scroll owns the camera. */
   const reframe = useRef<(() => void) | null>(null);
@@ -60,6 +63,7 @@ export function Line() {
   const fit = () => {
     const el = svg.current; if (!el) return;
     const r = el.getBoundingClientRect();
+    size.current = { w: r.width, h: r.height };
     capped.current = capPan(r.width, r.height);
     const f = frame(r.width, r.height);
     el.setAttribute("viewBox", `${f.x} ${f.y} ${f.w} ${f.h}`);
@@ -138,13 +142,6 @@ export function Line() {
         el.style.setProperty("--px",
           `${((INTRO_ANCHOR.x + PLATE_GAP) - f.x) / f.w * 100}%`);
         el.style.setProperty("--py", `${(INTRO_ANCHOR.y - f.y) / f.h * 100}%`);
-        /* Where the branch sits on screen once parked, so the copy can hang
-           below it instead of across it. */
-        const ab = root.current?.querySelector<HTMLElement>(".ln-about");
-        ab?.style.setProperty("--ay",
-          `${((ABOUT_END.y + ABOUT_CAM.y) - f.y) / f.h * 100}%`);
-        ab?.style.setProperty("--ax",
-          `${((ABOUT_END.x + ABOUT_CAM.x) - f.x) / f.w * 100}%`);
       };
       /* max-width cannot shrink the wordmark — the lines are nowrap, so a
          constrained box just overflows. The font-size clamp was the only real
@@ -248,10 +245,25 @@ export function Line() {
       let landed = !!seen;
       /* The excursion west and the scroll south both move the same camera, so
          they go through one renderer and add rather than fight. */
-      const away = { x: 0, y: 0 };
+      const away = { x: 0, y: 0, live: false };
+      /* The About copy belongs to the terminus, so it is placed from the live
+         camera every frame rather than parked at the arrival position. It used
+         to be fixed on screen and cross-faded, and the fade was only there to
+         hide the fact that it did not move — the words appeared out of nowhere
+         instead of arriving with the station they belong to. */
+      const carry = (cx: number, cy: number) => {
+        const el = anchor.current;
+        if (!el || (!away.live && away.x === 0)) return;
+        const f = frame(window.innerWidth, window.innerHeight);
+        el.style.setProperty("--atx",
+          `${((ABOUT_END.x + cx - f.x) / f.w) * size.current.w}px`);
+        el.style.setProperty("--aty",
+          `${((ABOUT_END.y + cy - f.y) / f.h) * size.current.h}px`);
+      };
       const render = () => {
         const c = cameraAt(s.p, capped.current);
         put(c.x + away.x, c.y + away.y);
+        carry(c.x + away.x, c.y + away.y);
       };
       const move = () => { if (!landed) return; render(); };
 
@@ -271,7 +283,6 @@ export function Line() {
          Delegated from the document, so every About link goes the same way:
          the stop on the diagonal, the menu, the footer and the audience path
          at the foot of the contact sheet. */
-      let atAbout = false;
       const panel = () => root.current?.querySelector<HTMLElement>(".ln-about");
       /* Coming back puts you at the junction, so that is where focus belongs —
          not on whatever was clicked. Restoring focus to a footer link scrolled
@@ -281,14 +292,15 @@ export function Line() {
         root.current?.querySelector<HTMLElement>('.ln-stop a[href="#about"]');
 
       const arrive = () => {
-        atAbout = true;
+        away.live = true;
         document.documentElement.classList.add("at-about");
-        gsap.to(away, { x: ABOUT_CAM.x, y: ABOUT_CAM.y, duration: 1.15, ease: "power2.inOut", onUpdate: render });
-        gsap.to(panel()!, { opacity: 1, duration: 0.5, ease: "power2.out", delay: 0.72,
-          onComplete: () => panel()?.focus() });
+        render();
+        gsap.to(away, { x: ABOUT_CAM.x, y: ABOUT_CAM.y, duration: 1.15,
+          ease: "power2.inOut", onUpdate: render,
+          onComplete: () => panel()?.focus({ preventScroll: true }) });
       };
       const goAbout = () => {
-        if (atAbout || !landed) return;
+        if (away.live || !landed) return;
         const lenis = getLenis();
         /* The branch only exists at the landing, so come back up the line
            first — from the footer this reads as retracing the route. */
@@ -301,11 +313,10 @@ export function Line() {
         arrive();
       };
       const leaveAbout = () => {
-        if (!atAbout) return;
-        atAbout = false;
-        gsap.to(panel()!, { opacity: 0, duration: 0.28, ease: "power2.in" });
+        if (!away.live) return;
         gsap.to(away, { x: 0, y: 0, duration: 1, ease: "power2.inOut", onUpdate: render,
           onComplete: () => {
+            away.live = false;
             document.documentElement.classList.remove("at-about");
             if (!getView()) getLenis()?.start();
             junction()?.focus({ preventScroll: true });
@@ -320,7 +331,7 @@ export function Line() {
         goAbout();
       };
       const onAboutKey = (e: KeyboardEvent) => {
-        if (e.key === "Escape" && atAbout) leaveAbout();
+        if (e.key === "Escape" && away.live) leaveAbout();
       };
       addEventListener("click", onAboutClick);
       addEventListener("keydown", onAboutKey);
@@ -354,7 +365,7 @@ export function Line() {
       const settleScroll = () => {
         const lenis = getLenis();
         /* Not mid-gesture, not under an open overlay, not during the ride. */
-        if (!lenis || touching || getView() || !landed || atAbout) return;
+        if (!lenis || touching || getView() || !landed || away.live) return;
         const y = window.scrollY;
         const pts = restAt();
         /* The contact sheet is the last rest there is. Below it sits a form
@@ -555,6 +566,7 @@ export function Line() {
           SVG text does not wrap, and anything drawn in the world scales with
           the frame — a paragraph would be vast on a laptop and unreadable on
           a phone. */}
+      <div className="ln-about-at" ref={anchor} aria-hidden={undefined}>
       <div className="ln-about" tabIndex={-1} role="region"
         aria-label="About Belle Voyage Estates">
         <h2>About</h2>
@@ -562,6 +574,7 @@ export function Line() {
         <button type="button" className="ln-back">
           <Arrow dir="left" size={18} /> Back to the line
         </button>
+      </div>
       </div>
 
       <div className="ln-box" ref={box} aria-hidden="true">

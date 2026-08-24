@@ -130,14 +130,17 @@ html.menu-open, html.menu-open body{overflow:hidden;}
    Placed in screen terms from the same frame the camera uses, like the intro
    plate. It cannot live in the drawing: SVG text does not wrap, and anything
    drawn in the world scales with the frame. */
-/* Hung under the terminus rather than off the page gutter, so the words belong
-   to the station the line arrives at. */
-.ln-about{position:absolute; z-index:4; right:var(--pad);
-  left:max(var(--pad), var(--ax,20%));
-  top:calc(var(--ay,40%) + clamp(40px,6.5dvh,80px));
-  opacity:0; pointer-events:none; outline:none;
-  max-width:64ch; display:grid; gap:clamp(11px,1.6dvh,20px); color:#fff;}
+/* Carried by the terminus. The anchor is a zero-size point translated to wherever
+   the station currently is, so the copy travels in with it and needs no fade —
+   the fade only ever existed to hide the fact that it did not move. */
+.ln-about-at{position:absolute; z-index:4; left:0; top:0; width:0; height:0;
+  transform:translate(var(--atx,-9999px), var(--aty,0px));
+  visibility:hidden; pointer-events:none;}
+.at-about .ln-about-at{visibility:visible;}
 .at-about .ln-about{pointer-events:auto;}
+.ln-about{position:absolute; left:0; top:clamp(40px,6.5dvh,80px);
+  width:min(640px, 68vw); outline:none;
+  display:grid; gap:clamp(11px,1.6dvh,20px); color:#fff;}
 .ln-about h2{margin:0; font-size:clamp(27px,4.4vw,56px); letter-spacing:-.045em;}
 .ln-about p{margin:0; line-height:1.5;
   font-size:clamp(14.5px,1.3vw,19px); color:rgba(255,255,255,.82);}
