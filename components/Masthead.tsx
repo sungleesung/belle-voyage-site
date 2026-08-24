@@ -31,7 +31,12 @@ export function Masthead() {
        the overlay. Only stopping it does. Restart is gated on the intro having
        landed, or an overlay opened mid-intro would hand scrolling back early. */
     if (view) getLenis()?.stop();
-    else if (arrived()) getLenis()?.start();
+    /* Not while the camera is away on the About branch — it holds the scroll
+       itself, and starting Lenis under it left the page scrolled a frame and a
+       half off the drawing, which is a blank screen. Line.tsx applies the
+       mirror of this guard when it hands the scroll back. */
+    else if (arrived() && !document.documentElement.classList.contains("at-about"))
+      getLenis()?.start();
     return () => { removeEventListener("keydown", esc);
       document.documentElement.classList.remove("menu-open"); };
   }, [view]);

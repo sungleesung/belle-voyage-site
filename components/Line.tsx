@@ -202,6 +202,7 @@ export function Line() {
                already be open by the time this fires. Starting Lenis anyway
                scrolled the page behind it. */
             if (!getView()) getLenis()?.start();
+            if (wanted) { wanted = false; goAbout(); }
           },
         });
         open
@@ -290,23 +291,45 @@ export function Line() {
          and the menu's link no longer exists by then anyway. */
       const junction = () =>
         root.current?.querySelector<HTMLElement>('.ln-stop a[href="#about"]');
+      /* Nothing behind the panel is reachable while it is up. Two Tabs used to
+         land in the enquiry form, and the browser's own scroll-into-view then
+         moved the document out from under a camera that was holding still —
+         lenis.stop() does not prevent that, it only stops wheel and touch. */
+      const contain = (on: boolean) => {
+        const mh = document.querySelector<HTMLElement>(".mh");
+        const ct = document.querySelector<HTMLElement>(".ct");
+        if (mh) mh.inert = on;
+        if (ct) ct.inert = on;
+        root.current?.querySelectorAll("svg a").forEach((a) => {
+          if (on) a.setAttribute("tabindex", "-1");
+          else a.removeAttribute("tabindex");
+        });
+      };
 
+      let trip = 0;
+      let wanted = false;
       const arrive = () => {
-        away.live = true;
-        document.documentElement.classList.add("at-about");
+        contain(true);
         render();
         gsap.to(away, { x: ABOUT_CAM.x, y: ABOUT_CAM.y, duration: 1.15,
           ease: "power2.inOut", onUpdate: render,
           onComplete: () => panel()?.focus({ preventScroll: true }) });
       };
       const goAbout = () => {
-        if (away.live || !landed) return;
+        if (away.live) return;
+        /* Asked for before the intro has landed — remembered rather than
+           dropped, which is what a click in that window used to be. */
+        if (!landed) { wanted = true; return; }
+        away.live = true;
+        document.documentElement.classList.add("at-about");
+        const token = ++trip;
         const lenis = getLenis();
         /* The branch only exists at the landing, so come back up the line
-           first — from the footer this reads as retracing the route. */
+           first — from the footer this reads as retracing the route. The trip
+           is claimed before this runs, so Escape works during it. */
         if (window.scrollY > 4 && lenis) {
           lenis.scrollTo(0, { duration: 0.8, easing: (x: number) => 1 - Math.pow(1 - x, 3),
-            onComplete: () => { lenis.stop(); arrive(); } });
+            onComplete: () => { if (token !== trip) return; lenis.stop(); arrive(); } });
           return;
         }
         lenis?.stop();
@@ -314,6 +337,8 @@ export function Line() {
       };
       const leaveAbout = () => {
         if (!away.live) return;
+        trip++;                      // cancels an arrival still on its way
+        contain(false);
         gsap.to(away, { x: 0, y: 0, duration: 1, ease: "power2.inOut", onUpdate: render,
           onComplete: () => {
             away.live = false;
@@ -324,6 +349,9 @@ export function Line() {
       };
 
       const onAboutClick = (e: MouseEvent) => {
+        /* Leave cmd/ctrl/shift-click and any non-primary button alone, so
+           "open in new tab" still opens a tab. */
+        if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
         const a = (e.target as Element | null)?.closest?.('a[href="#about"]');
         if (!a) return;
         e.preventDefault();
@@ -331,10 +359,18 @@ export function Line() {
         goAbout();
       };
       const onAboutKey = (e: KeyboardEvent) => {
-        if (e.key === "Escape" && away.live) leaveAbout();
+        /* An overlay on top gets the key first — one Escape used to close the
+           popup and leave About together. */
+        if (e.key === "Escape" && away.live && !getView()) leaveAbout();
       };
       addEventListener("click", onAboutClick);
       addEventListener("keydown", onAboutKey);
+      /* A shared or bookmarked #about has to arrive at About. With motion on,
+         the flat section it points at is display:none, so the link used to land
+         on the plain landing with no About anywhere on the page. One frame's
+         wait, because Lenis is created by the parent effect after this one. */
+      if (location.hash === "#about")
+        requestAnimationFrame(() => { if (landed) goAbout(); else wanted = true; });
       root.current?.querySelector(".ln-back")?.addEventListener("click", leaveAbout);
 
       /* ── settling ────────────────────────────────────────────────
