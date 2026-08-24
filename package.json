@@ -6,11 +6,13 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "prebuild": "node scripts/copy-maplibre.mjs"
   },
   "dependencies": {
     "gsap": "^3.13.0",
     "lenis": "^1.3.11",
+    "maplibre-gl": "^6.6.0",
     "next": "^15.5.23",
     "react": "19.1.1",
     "react-dom": "19.1.1"
