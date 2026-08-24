@@ -2,9 +2,16 @@ import type { Metadata } from "next";
 import { Doc, CONTACT } from "@/components/Doc";
 import { MARKETS } from "@/lib/properties";
 
-export const metadata: Metadata = { title: "Site map — Belle Voyage Estates" };
+export const metadata: Metadata = {
+  title: "Site map — Belle Voyage Estates",
+  description: "Every page on the Belle Voyage Estates site, in one place.",
+};
 
 const MAP = [
+  { head: "The line", links: [
+    { label: "Home", href: "/" },
+    { label: "Site map", href: "/sitemap" },
+  ]},
   { head: "Properties", links: [
     { label: "All properties", href: "/properties" },
     ...MARKETS.map((m) => ({ label: m.name, href: `/properties?market=${m.code}` })),

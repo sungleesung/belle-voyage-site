@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
 import { Doc, CONTACT } from "@/components/Doc";
 
-export const metadata: Metadata = { title: "For owners — Belle Voyage Estates" };
+export const metadata: Metadata = {
+  title: "For owners — Belle Voyage Estates",
+  description: "Letting, short stay, management, compliance and development for property owners across Canada, the United States, the United Kingdom and Europe.",
+};
 
 export default function Page() {
   return (

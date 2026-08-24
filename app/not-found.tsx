@@ -1,4 +1,11 @@
+import type { Metadata } from "next";
 import { Arrow } from "@/components/Arrow";
+
+/* Its own title, or the tab is byte-identical to the home page's. */
+export const metadata: Metadata = {
+  title: "Not found — Belle Voyage Estates",
+  description: "That page is not on the map.",
+};
 
 /* The one page nobody plans to see, in the register the rest of the site uses:
    a line that runs out. The manual's service-change signs say what is not

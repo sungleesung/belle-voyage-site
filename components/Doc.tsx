@@ -1,6 +1,10 @@
 import { Arrow } from "./Arrow";
 
-export const CONTACT = "ciravogler@bellevoyageestates.com";
+/* Same value the endpoint actually mails to, so the policy cannot promise one
+   address while enquiries go to another. The literal is the fallback for local
+   work where the variable is not set. */
+export const CONTACT =
+  process.env.CONTACT_TO || "ciravogler@bellevoyageestates.com";
 
 /* Every page that is mostly words: the policies, the site map, owners. Same
    chrome, one measure, so they read as one document set rather than three

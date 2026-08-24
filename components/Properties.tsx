@@ -37,6 +37,8 @@ function glyph(kind: string, colour: string) {
   el.type = "button";
   el.className = "pr-pin";
   el.style.setProperty("--c", colour);
+  el.tabIndex = -1;                 // the list carries the same twelve, reachably
+  el.setAttribute("aria-hidden", "true");
   el.innerHTML =
     kind === "ring"
       ? `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="7.5"/></svg>`
@@ -151,18 +153,22 @@ export function Properties({ initial }: { initial: Market | "all" }) {
             <li key={p.id} id={`row-${p.id}`} data-on={sel === p.id}
               style={{ ["--c" as string]: MARKETS.find((x) => x.code === p.market)!.colour }}
               onMouseEnter={() => setSel(p.id)} onFocus={() => setSel(p.id)}>
-              <a href={`/properties/${p.id}`}>
+              {/* Selects rather than navigates. Detail pages arrive with real
+                  inventory; until then a link here would be twelve 404s. */}
+              <button type="button" onClick={() => setSel(p.id)}>
                 <span className="pr-stop" data-kind={shapeOf(p.kind)} aria-hidden="true" />
                 <span className="pr-name">{p.name}</span>
                 <span className="pr-city">{p.city}</span>
                 <span className="pr-spec">{summary(p)}</span>
                 <span className="pr-price">{p.price}</span>
                 <Arrow dir="right" size={19} />
-              </a>
+              </button>
             </li>
           ))}
         </ol>
-        <div className="pr-map" ref={host} aria-label="Map of properties" role="img" />
+        {/* No role: it is not an image, and it holds the attribution links the
+            licence requires. The list beside it is the accessible copy. */}
+        <div className="pr-map" ref={host} />
       </div>
     </div>
   );

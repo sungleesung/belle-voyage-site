@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
 import { Doc, CONTACT } from "@/components/Doc";
 
-export const metadata: Metadata = { title: "AI usage policy — Belle Voyage Estates" };
+export const metadata: Metadata = {
+  title: "AI usage policy — Belle Voyage Estates",
+  description: "Where AI is and is not used at Belle Voyage Estates, and what we commit to where a person is affected.",
+};
 
 export default function Page() {
   return (

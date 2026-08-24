@@ -27,6 +27,10 @@ export function Masthead() {
     const esc = (e: KeyboardEvent) => e.key === "Escape" && setView(null);
     addEventListener("keydown", esc);
     document.documentElement.classList.toggle("menu-open", view !== null);
+    /* Focus escaped the open menu into the page behind it, and the keyboard
+       fallback bar then slid up OVER the menu it had escaped from. */
+    const main = document.querySelector<HTMLElement>("main");
+    if (main) main.inert = view !== null;
     /* overflow:hidden does not hold Lenis — it keeps scrolling the page behind
        the overlay. Only stopping it does. Restart is gated on the intro having
        landed, or an overlay opened mid-intro would hand scrolling back early. */
@@ -38,7 +42,9 @@ export function Masthead() {
     else if (arrived() && !document.documentElement.classList.contains("at-about"))
       getLenis()?.start();
     return () => { removeEventListener("keydown", esc);
-      document.documentElement.classList.remove("menu-open"); };
+      document.documentElement.classList.remove("menu-open");
+      const el = document.querySelector<HTMLElement>("main");
+      if (el) el.inert = false; };
   }, [view]);
 
   return (

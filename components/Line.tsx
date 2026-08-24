@@ -562,7 +562,10 @@ export function Line() {
             const p = onDiag(st.t);
             return (
               <g key={st.label} className="ln-stop" transform={`translate(${p.x} ${p.y})`}>
-                <a href={st.href} aria-label={st.label}
+                {/* Same as the regions: focus could land here and the browser
+                    could never scroll a pinned drawing to show it. The menu
+                    carries all three, reachably. */}
+                <a href={st.href} tabIndex={-1} aria-hidden="true"
                   onClick={st.href === "#contact" ? openContact : undefined}>
                   <circle r="62" fill="transparent" />
                   <Shape shape={st.shape} />

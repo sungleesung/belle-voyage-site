@@ -319,7 +319,9 @@ html.menu-open, html.menu-open body{overflow:hidden;}
   .ft-map a{padding:12px 0; min-height:44px;}
   .ft-credit a{display:inline-block; padding:12px 0; min-height:44px;}
   .ft-reach a{display:inline-block; padding:11px 0; min-height:44px;}
-  .doc-body a{display:inline-block; padding:6px 0;}
+  /* List items only. A link inside a sentence is exempt from the target-size
+     rule, and padding one inflates the line box it sits in. */
+  .doc-body li a{display:inline-block; padding:11px 0; min-height:44px;}
 }
 
 /* ── contact popup ─────────────────────────────────────────────
@@ -396,11 +398,12 @@ html.menu-open, html.menu-open body{overflow:hidden;}
   min-height:0; border-top:1px solid var(--rule);}
 .pr-list{margin:0; padding:0; list-style:none; overflow-y:auto; min-height:0;}
 .pr-list li{--c:var(--muted); border-bottom:1px solid var(--rule);}
-.pr-list a{display:grid; align-items:center; gap:2px 16px; padding:18px var(--pad);
+.pr-list button{width:100%; text-align:left; font:inherit; color:inherit;
+  background:none; border:0; cursor:pointer; display:grid; align-items:center; gap:2px 16px; padding:18px var(--pad);
   grid-template-columns:auto minmax(0,1fr) auto auto;
   grid-template-areas:"stop name city arrow" "stop spec price arrow";
   transition:background var(--t-4) var(--e-line);}
-.pr-list li[data-on="true"] a{background:var(--panel);}
+.pr-list li[data-on="true"] button{background:var(--panel);}
 
 /* The station shapes the system already uses: hollow ring is a flagship,
    solid disc a standard letting, diamond a limited run — short stay. */
@@ -461,12 +464,18 @@ html.menu-open, html.menu-open body{overflow:hidden;}
 
 /* MapLibre's controls, brought into the type system. Attribution stays — the
    OpenStreetMap licence requires it — but at the manual's warning size. */
+/* colour, not just the links: the connective runs — the copyright sign, "Data
+   from" — inherit MapLibre's black and sat at 1.02:1 on the dark pill. */
 .pr .pr-map .maplibregl-ctrl-attrib.maplibregl-ctrl-attrib{background:color-mix(in srgb, var(--paper) 82%, transparent);
-  font-size:11px; letter-spacing:0; padding:2px 7px;}
+  color:var(--muted); font-size:11px; letter-spacing:0; padding:2px 7px;}
 .pr .pr-map .maplibregl-ctrl-attrib a{color:var(--muted); text-decoration:underline;
   text-underline-offset:2px;}
 .pr .pr-map .maplibregl-ctrl-attrib a:hover{color:var(--ink);}
-.pr .pr-map .maplibregl-ctrl-attrib-button{display:none;}
+/* Specificity, not hope: MapLibre's own rule has the same weight and their
+   stylesheet is imported from the component, so it lands after this file and
+   won. The button was still there, overlapping the last 16px of the
+   OpenStreetMap link — the one link the licence requires. */
+.pr .pr-map .maplibregl-ctrl-attrib .maplibregl-ctrl-attrib-button{display:none;}
 .pr .pr-map .maplibregl-ctrl-attrib.maplibregl-compact-show{padding-right:7px;}
 
 /* ── documents ─────────────────────────────────────────────────

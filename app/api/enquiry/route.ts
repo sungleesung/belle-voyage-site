@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createHash } from "node:crypto";
+import { createHash, randomBytes } from "node:crypto";
 import { mailConfigured, sendEnquiry } from "@/lib/mail";
 
 /* The contact form's only destination. It refuses rather than pretends: a form
@@ -34,14 +34,18 @@ function originOk(req: NextRequest) {
    this stops casual hammering rather than a determined script. It earns its
    place because the Resend key is shared with another site — a burnt quota
    would take that one down too. */
+/* If no salt is configured, one is generated per process rather than falling
+   back to a constant in this repository. A published salt is not a salt: the
+   whole IPv4 space can be hashed against it in about half an hour on one core,
+   which would make the privacy policy's "cannot be turned back into it" false. */
+const SALT = process.env.IP_SALT || randomBytes(32).toString("hex");
 const hits = new Map<string, number[]>();
 const RATE = { max: 5, window: 60 * 60 * 1000 };
 function tooMany(req: NextRequest) {
   const raw = (req.headers.get("x-forwarded-for") || "").split(",")[0]?.trim() || "0.0.0.0";
   /* One-way, so what is held is a counter against a hash and never an address.
      The privacy policy says exactly this, so it has to stay true. */
-  const ip = createHash("sha256")
-    .update(raw + (process.env.IP_SALT || "belle-voyage")).digest("hex");
+  const ip = createHash("sha256").update(raw + SALT).digest("hex");
   const now = Date.now();
   if (hits.size > 5000) hits.clear();
   const seen = (hits.get(ip) || []).filter((t) => now - t < RATE.window);

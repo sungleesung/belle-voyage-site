@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
 import { Doc, CONTACT } from "@/components/Doc";
 
-export const metadata: Metadata = { title: "Privacy policy — Belle Voyage Estates" };
+export const metadata: Metadata = {
+  title: "Privacy policy — Belle Voyage Estates",
+  description: "What this website does with information about you, described specifically rather than in general terms.",
+};
 
 export default function Page() {
   return (
@@ -21,20 +24,11 @@ export default function Page() {
 
       <h2>What your browser stores</h2>
       <p>
-        This site sets no cookies. It uses two small pieces of browser storage,
-        neither of which identifies you and neither of which leaves your device:
+        This site sets no cookies. It stores one thing in your browser: a flag
+        recording that you have seen the opening animation, so it plays once
+        rather than every time you open a page. It does not identify you, it
+        never leaves your device, and it is discarded when you close the tab.
       </p>
-      <ul>
-        <li>
-          A session flag recording that you have seen the opening animation, so
-          it plays once rather than on every page you open. It is discarded when
-          you close the tab.
-        </li>
-        <li>
-          A theme preference, if one has been set, so the site opens in the
-          light or dark version you last chose.
-        </li>
-      </ul>
 
       <h2>What happens to an enquiry</h2>
       <p>
@@ -43,18 +37,20 @@ export default function Page() {
         added to any list and it is not shared with anyone else.
       </p>
       <p>
-        If that email fails to send, the contents of the enquiry are written to
-        our server log so it can be recovered and answered by hand rather than
-        lost silently. Those logs are kept for a short period — a day at most —
-        and then deleted automatically.
+        If that email fails to send, you are told so on the spot, with the
+        address to write to instead — you are never shown a confirmation for a
+        message that did not arrive. The contents are also written to our server
+        log so the failure can be diagnosed. Those logs are kept briefly, about
+        an hour, and then deleted automatically; they are a diagnostic record
+        and not a place your enquiry is stored.
       </p>
 
       <h2>Preventing abuse</h2>
       <p>
         To stop automated submissions, the form counts recent submissions
         against a one-way hash of your IP address, held in memory for up to an
-        hour. The address itself is never written down, and the hash cannot be
-        turned back into it.
+        hour and never written to disk. The hash is salted with a secret that is
+        not published, so it cannot be worked backwards to the address.
       </p>
 
       <h2>Who else is involved</h2>
