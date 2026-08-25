@@ -13,6 +13,10 @@
 
   --paper:var(--white); --ink:var(--black);
   --muted:var(--grey-text); --rule:var(--grey-line);
+  /* A rule that separates SECTIONS may be faint; one that draws the edge of a
+     CONTROL carries information and owes 3:1 (WCAG 1.4.11). grey-mid clears it
+     on white (3.7:1) and on black (5.6:1), so one value serves both themes. */
+  --rule-strong:var(--grey-mid);
   --water:#E7EFF4; --panel:#F5F7F8;
 
   /* One gutter. No container, no max-width, no centred column. */
@@ -43,6 +47,7 @@
 :root[data-theme="dark"]{
   --paper:var(--black); --ink:var(--white);
   --muted:var(--grey-mid); --rule:var(--grey-deep);
+  --rule-strong:var(--grey-mid);
   --water:#0A1116; --panel:#0B0E10;
   /* Fields are re-authored per theme — a pastel that works on white is
      meaningless on black, and inheriting it produces white-on-white. */
