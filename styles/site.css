@@ -17,9 +17,10 @@
    aligned to the page. Negative margin keeps the target and puts the ink on
    the margin. */
 .mh-burger{position:relative; z-index:2; width:44px; height:44px;
-  display:grid; align-content:center; gap:4px; background:none; border:0;
-  cursor:pointer; padding:0; margin-right:0;}
-.mh-burger i{display:block; height:2px; background:#fff; border-radius:var(--r-cap);
+  display:grid; align-content:center; justify-items:end; gap:5px;
+  background:none; border:0; cursor:pointer; padding:0;}
+.mh-burger i{display:block; width:28px; height:2px; background:#fff;
+  border-radius:var(--r-cap);
   transition:transform var(--t-4) var(--e-line), opacity var(--t-2) var(--e-line);}
 .mh-burger[aria-expanded="true"] i:nth-of-type(1){transform:translateY(7px) rotate(45deg);}
 .mh-burger[aria-expanded="true"] i:nth-of-type(2){opacity:0;}
@@ -130,6 +131,7 @@ html.menu-open, html.menu-open body{overflow:hidden;}
    hiding this list, it waits off the bottom of the screen and slides up the
    moment anything inside it takes focus. */
 .motion .ln-fallback{position:fixed; left:0; right:0; bottom:0; z-index:70;
+  max-height:100dvh; overflow-y:auto; overscroll-behavior:contain;
   border-top:2px solid var(--ink); transform:translateY(101%);
   transition:transform var(--t-4) var(--e-line);}
 .motion .ln-fallback:focus-within{transform:none;}
@@ -138,6 +140,10 @@ html.menu-open, html.menu-open body{overflow:hidden;}
   border-bottom:1px solid var(--rule-strong); min-height:44px;
   font-weight:700; font-size:clamp(19px,2.2vw,30px); letter-spacing:-.03em;
   transition:opacity var(--t-4) var(--e-line);}
+@media(max-height:560px){
+  .ln-fallback a{padding:11px var(--pad); font-size:17px; gap:12px;}
+  .lf-dot{width:19px; height:19px;}
+}
 .ln-fallback a:hover{opacity:.55;}
 .ln-fallback svg{margin-left:auto;}
 .lf-dot{width:26px; height:26px; border-radius:var(--r-globe); flex:none;}
@@ -156,15 +162,16 @@ html.menu-open, html.menu-open body{overflow:hidden;}
 .at-about .ln-about-at{visibility:visible;}
 .at-about .ln-about{pointer-events:auto;}
 .ln-about{position:absolute; left:0; top:clamp(40px,6.5dvh,80px);
-  /* The page gutter, not an arbitrary vw — at 390 this is every pixel the
-     16px floor can have, and the measure still lands at 41 characters. */
-  width:min(640px, calc(100vw - var(--pad) * 2)); outline:none;
+  /* Every pixel the 16px floor can have on a phone; from 560 up the panel
+     is anchored well inside the frame and needs the tighter fraction. */
+  width:min(640px, 88vw); outline:none;
   display:grid; gap:clamp(11px,1.6dvh,20px); color:#fff;}
+@media(min-width:560px){ .ln-about{width:min(640px, 60vw);} }
 .ln-about h2{margin:0; font-size:clamp(27px,4.4vw,56px); letter-spacing:-.045em;}
 .ln-about p{margin:0; line-height:1.5; max-width:60ch;
   font-size:clamp(16px,1.3vw,19px); color:rgba(255,255,255,.82);}
 @media(max-height:460px){
-  .ln-about{gap:8px;}
+  .ln-about{gap:6px; top:clamp(22px,4dvh,40px);}
   .ln-about h2{font-size:clamp(22px,4vw,30px);}
   .ln-about p{font-size:16px; line-height:1.4;}
   .ln-back{margin-top:0; padding:9px 0; min-height:38px;}
@@ -198,7 +205,7 @@ html.menu-open, html.menu-open body{overflow:hidden;}
 @media(max-width:640px){.ct-row{grid-template-columns:minmax(0,1fr);
   gap:clamp(14px,2.4dvh,22px);}}
 .ct-f{display:flex; flex-direction:column; gap:8px;}
-.ct-f span{font-size:var(--t-warn); letter-spacing:.14em; text-transform:uppercase;
+.ct-f > label{font-size:var(--t-warn); letter-spacing:.14em; text-transform:uppercase;
   color:rgba(255,255,255,.55); font-weight:700;}
 .ct-f input, .ct-f textarea{font:inherit; font-size:clamp(16px,1.5vw,20px);
   color:#fff; background:transparent; border:0; border-bottom:2px solid rgba(255,255,255,.42);
@@ -425,7 +432,7 @@ html.menu-open, html.menu-open body{overflow:hidden;}
   transition:background var(--t-4) var(--e-line), color var(--t-4) var(--e-line);}
 .pr-filter button span{font-size:var(--t-warn); opacity:.62; font-variant-numeric:tabular-nums;}
 .pr-filter button[data-on="true"]{background:var(--c); color:var(--paper);}
-.pr-filter button[data-on="true"] span{font-weight:500;}
+.pr-filter button[data-on="true"] span{opacity:1; font-weight:500;}
 
 .pr-body{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);
   min-height:0; border-top:1px solid var(--rule);}
@@ -445,7 +452,7 @@ html.menu-open, html.menu-open body{overflow:hidden;}
 .pr-stop[data-kind="ring"]{border:4px solid var(--c); border-radius:var(--r-globe);}
 .pr-stop[data-kind="disc"]{background:var(--c); border-radius:var(--r-globe);
   transform:scale(.82);}
-.pr-stop[data-kind="diamond"]{border:4px solid var(--c); transform:rotate(45deg) scale(.7);}
+.pr-stop[data-kind="diamond"]{border:4px solid var(--c); transform:rotate(45deg) scale(.86);}
 .pr-name{grid-area:name; font-weight:700; letter-spacing:-.025em;
   font-size:clamp(17px,1.5vw,21px);}
 .pr-city{grid-area:city; font-size:var(--t-warn); color:var(--muted); text-align:right;}
@@ -637,8 +644,7 @@ html.menu-open, html.menu-open body{overflow:hidden;}
 /* Dimming to .32 was fine while these were `disabled` and exempt from
    contrast. They are aria-disabled now — still focusable, still announced as
    buttons — so the bound reads as a colour step that holds AA, not a fade. */
-.fl-step button[aria-disabled="true"]{color:var(--muted); cursor:default;
-  border-color:var(--rule);}
+.fl-step button[aria-disabled="true"]{color:var(--muted); cursor:default;}
 
 .fl-foot{position:sticky; bottom:0; background:var(--paper);
   border-top:1px solid var(--rule); padding:14px clamp(18px,3vw,28px);

@@ -243,8 +243,15 @@ export function Properties({ initial }: { initial: Market | "all" }) {
                 the only pointer path (WCAG 2.5.7). */}
             <div className="fl-range"
               onPointerDown={(e) => {
+                /* Primary button only — a right-click was silently applying a
+                   filter. And a native range centres its thumb inside the
+                   track, so the mapping has to inset by half a thumb or
+                   pressing a handle without moving it nudges the value. */
+                if (e.button !== 0) return;
                 const box = e.currentTarget.getBoundingClientRect();
-                const f = Math.min(1, Math.max(0, (e.clientX - box.left) / box.width));
+                const half = 13;
+                const f = Math.min(1, Math.max(0,
+                  (e.clientX - box.left - half) / Math.max(1, box.width - half * 2)));
                 const v = Math.round((floor + f * (ceil - floor)) / 100) * 100;
                 if (Math.abs(v - min) <= Math.abs(v - max)) setLo(Math.min(v, max - 100));
                 else setHi(Math.max(v, min + 100));

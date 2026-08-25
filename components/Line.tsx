@@ -293,8 +293,17 @@ export function Line() {
          not on whatever was clicked. Restoring focus to a footer link scrolled
          the browser back down to it, undoing the return journey in one frame,
          and the menu's link no longer exists by then anyway. */
-      const junction = () =>
-        root.current?.querySelector<HTMLElement>('.ln-stop a[href="#about"]');
+      /* The panel and its Back button are about to be torn down. If focus is
+         on either — or has already fallen to <body> because they went first —
+         it has to land on something real and on screen; leaving it on the stop
+         it came from means the next Tab restarts from the top. */
+      const junction = () => {
+        const live = document.activeElement;
+        const held = live && live !== document.body
+          && !root.current?.contains(live);
+        if (held) return;
+        document.querySelector<HTMLElement>(".mh-burger")?.focus({ preventScroll: true });
+      };
       /* Nothing behind the panel is reachable while it is up. Two Tabs used to
          land in the enquiry form, and the browser's own scroll-into-view then
          moved the document out from under a camera that was holding still —
@@ -305,18 +314,15 @@ export function Line() {
         /* The fallback nav is the one live thing left inside <main>, and it
            slides itself up on focus — so without this, Tab out of the About
            panel raised it over the excursion it was meant to be behind. */
-        const fb = root.current?.querySelector<HTMLElement>(".ln-fallback");
+        const fb = document.querySelector<HTMLElement>(".ln-fallback");
         if (mh) mh.inert = on;
         if (ct) ct.inert = on;
         if (fb) fb.inert = on;
-        root.current?.querySelectorAll("svg a").forEach((a) => {
-          if (on) a.setAttribute("tabindex", "-1");
-          else a.removeAttribute("tabindex");
-        });
       };
 
       let trip = 0;
       let wanted = false;
+      let warmed: HTMLLinkElement | null = null;
       const arrive = () => {
         contain(true);
         render();
@@ -348,13 +354,14 @@ export function Line() {
         if (!away.live) return;
         trip++;                      // cancels an arrival still on its way
         gsap.killTweensOf(away);     // and stops a departure mid-flight
+        warmed?.remove(); warmed = null;   // a cancelled trip warms nothing
         contain(false);
         gsap.to(away, { x: 0, y: 0, duration: 1, ease: "power2.inOut", onUpdate: render,
           onComplete: () => {
             away.live = false;
             document.documentElement.classList.remove("at-about");
             if (!getView()) getLenis()?.start();
-            junction()?.focus({ preventScroll: true });
+            junction();
           } });
       };
 
@@ -371,6 +378,7 @@ export function Line() {
         const pre = document.createElement("link");
         pre.rel = "prefetch"; pre.href = "/properties";
         document.head.appendChild(pre);
+        warmed = pre;
         const token = ++trip;
         gsap.to(away, { x: PROPS_CAM.x, y: PROPS_CAM.y, duration: 0.95,
           ease: "power2.in", onUpdate: render,

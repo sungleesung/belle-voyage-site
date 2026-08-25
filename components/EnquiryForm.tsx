@@ -13,6 +13,10 @@ import { Arrow } from "./Arrow";
 export function EnquiryForm() {
   const [state, setState] = useState<"idle" | "sending" | "done">("idle");
   const [err, setErr] = useState<{ message: string; field?: string } | null>(null);
+  /* Keyed on this, so an identical second rejection remounts the message. A
+     role="alert" whose text React merely reconciles never fires again, and the
+     field already holds focus, so nothing else would have spoken. */
+  const [seq, setSeq] = useState(0);
   const form = useRef<HTMLFormElement>(null);
   const uid = useId();
   const done = useRef<HTMLDivElement>(null);
@@ -55,9 +59,11 @@ export function EnquiryForm() {
       if (r.ok) { setState("done"); return; }
       const j = await r.json().catch(() => ({}));
       setErr({ message: j.error || "Something went wrong.", field: j.field });
+      setSeq((n) => n + 1);
       setState("idle");
     } catch {
       setErr({ message: "Could not reach the server. Please try again." });
+      setSeq((n) => n + 1);
       setState("idle");
     }
   }
@@ -78,30 +84,45 @@ export function EnquiryForm() {
 
   return (
     /* The server owns validation, so the messages are ours and read the same
-       whichever browser you are in. */
+       whichever browser you are in.
+
+       Labelled by id rather than wrapped: an error rendered inside its own
+       <label> becomes part of the field's accessible name, and the name was
+       being read out as "EMAIL That email address looks wrong."
+
+       role="alert" on the message as well as aria-describedby, because the
+       second identical rejection announced nothing at all — the field already
+       held focus, so re-focusing it fired no event and there was no live
+       region left to speak. */
     <form className="ct-form" ref={form} onSubmit={submit} noValidate>
       <div className="ct-row">
-        <label className="ct-f">
-          <span>Name</span>
-          <input name="name" type="text" autoComplete="name" {...at("name")} required />
-          {err?.field === "name" && <em className="ct-fe" id={`${uid}-name`}>{err.message}</em>}
-        </label>
-        <label className="ct-f">
-          <span>Email</span>
-          <input name="email" type="email" autoComplete="email" {...at("email")} required />
-          {err?.field === "email" && <em className="ct-fe" id={`${uid}-email`}>{err.message}</em>}
-        </label>
+        <div className="ct-f">
+          <label htmlFor={`${uid}-name-f`}>Name</label>
+          <input id={`${uid}-name-f`} name="name" type="text" autoComplete="name"
+            {...at("name")} required />
+          {err?.field === "name" &&
+            <em className="ct-fe" role="alert" key={seq} id={`${uid}-name`}>{err.message}</em>}
+        </div>
+        <div className="ct-f">
+          <label htmlFor={`${uid}-email-f`}>Email</label>
+          <input id={`${uid}-email-f`} name="email" type="email" autoComplete="email"
+            {...at("email")} required />
+          {err?.field === "email" &&
+            <em className="ct-fe" role="alert" key={seq} id={`${uid}-email`}>{err.message}</em>}
+        </div>
       </div>
-      <label className="ct-f">
-        <span>Subject</span>
-        <input name="subject" type="text" {...at("subject")} required />
-        {err?.field === "subject" && <em className="ct-fe" id={`${uid}-subject`}>{err.message}</em>}
-      </label>
-      <label className="ct-f">
-        <span>Message</span>
-        <textarea name="message" rows={5} {...at("message")} required />
-        {err?.field === "message" && <em className="ct-fe" id={`${uid}-message`}>{err.message}</em>}
-      </label>
+      <div className="ct-f">
+        <label htmlFor={`${uid}-subject-f`}>Subject</label>
+        <input id={`${uid}-subject-f`} name="subject" type="text" {...at("subject")} required />
+        {err?.field === "subject" &&
+          <em className="ct-fe" role="alert" key={seq} id={`${uid}-subject`}>{err.message}</em>}
+      </div>
+      <div className="ct-f">
+        <label htmlFor={`${uid}-message-f`}>Message</label>
+        <textarea id={`${uid}-message-f`} name="message" rows={5} {...at("message")} required />
+        {err?.field === "message" &&
+          <em className="ct-fe" role="alert" key={seq} id={`${uid}-message`}>{err.message}</em>}
+      </div>
 
       {/* Off-screen rather than display:none — a bot that checks visibility
           still fills it, and filling it is the whole tell. */}

@@ -11,10 +11,9 @@ export function ContactModal() {
   const [opening, setOpening] = useState(0);
   const dlg = useRef<HTMLDialogElement>(null);
 
-  /* Whatever had focus when it opened, so closing returns there. The menu link
-     is often gone by then — the menu closes underneath — so fall back to the
-     stop on the line rather than dropping focus on <body>. */
+  /* Whatever had focus when it opened, so closing returns there. */
   const from = useRef<HTMLElement | null>(null);
+  const everOpened = useRef(false);
   useEffect(() => onView((v) => {
     setOpen(v === "contact");
     if (v === "contact") {
@@ -23,25 +22,29 @@ export function ContactModal() {
     }
   }), []);
 
-  useEffect(() => {
-    if (open) return;
-    const back = from.current;
-    /* Opened from the masthead menu, the link that opened it is gone — the
-       menu is hidden={!open} and unmounts it. The burger is what stands in its
-       place on screen; the stop on the line is aria-hidden and no place to
-       leave focus. */
-    const fallback = document.querySelector<HTMLElement>(".mh-burger");
-    const target = back?.isConnected ? back : fallback;
-    target?.focus({ preventScroll: true });
-  }, [open]);
-
   /* A native dialog carries the focus trap, the Escape key and the inert
      background itself. Hand-rolling those is where modals usually go wrong. */
   useEffect(() => {
     const el = dlg.current;
     if (!el) return;
-    if (open && !el.open) el.showModal();
-    if (!open && el.open) el.close();
+    if (open && !el.open) { everOpened.current = true; el.showModal(); return; }
+    if (!open && el.open) {
+      el.close();
+      /* After close(), never before. A dialog restores focus itself on close,
+         to whatever was focused when it opened — which here is a link inside a
+         hidden menu, so the restore is refused and focus lands on <body>.
+         Anything we do earlier in the same commit gets overwritten by that. */
+      if (!everOpened.current) return;
+      const back = from.current;
+      /* isConnected is the wrong question: hidden={!open} does not unmount the
+         menu's links, it makes them unfocusable. And the stop on the line is
+         aria-hidden with tabindex -1, so leaving focus there means the next Tab
+         restarts from the top of the document. */
+      const usable = back?.isConnected && back.offsetParent !== null
+        && !back.closest("svg") ? back : null;
+      (usable ?? document.querySelector<HTMLElement>(".mh-burger"))
+        ?.focus({ preventScroll: true });
+    }
   }, [open]);
 
   useEffect(() => {
