@@ -40,7 +40,9 @@ export function ContactModal() {
          menu's links, it makes them unfocusable. And the stop on the line is
          aria-hidden with tabindex -1, so leaving focus there means the next Tab
          restarts from the top of the document. */
-      const usable = back?.isConnected && back.offsetParent !== null
+      /* getClientRects, not offsetParent — offsetParent is null for any
+         position:fixed element whether or not it is visible. */
+      const usable = back?.isConnected && back.getClientRects().length > 0
         && !back.closest("svg") ? back : null;
       (usable ?? document.querySelector<HTMLElement>(".mh-burger"))
         ?.focus({ preventScroll: true });

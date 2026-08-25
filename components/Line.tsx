@@ -52,6 +52,9 @@ export function Line() {
   /* Cached on fit so the per-frame placement never reads layout. */
   const size = useRef({ w: 0, h: 0 });
   const anchor = useRef<HTMLDivElement>(null);
+  /* The panel's own offset inside the anchor. Constant until layout changes,
+     and read there rather than per frame. */
+  const aboutTop = useRef(60);
   /* Set while the intro owns the camera, so a resize re-derives it. Null after
      the intro hands over, because then the scroll owns the camera. */
   const reframe = useRef<(() => void) | null>(null);
@@ -65,6 +68,8 @@ export function Line() {
      from the real frame — has already been positioned for the true one, and
      they disagree for a frame. */
   const fit = () => {
+    const panel = anchor.current?.querySelector<HTMLElement>(".ln-about");
+    if (panel) aboutTop.current = panel.offsetTop;
     const el = svg.current; if (!el) return;
     const r = el.getBoundingClientRect();
     size.current = { w: r.width, h: r.height };
@@ -260,10 +265,17 @@ export function Line() {
         const el = anchor.current;
         if (!el || (!away.live && away.x === 0)) return;
         const f = frame(window.innerWidth, window.innerHeight);
-        el.style.setProperty("--atx",
-          `${((ABOUT_END.x + cx - f.x) / f.w) * size.current.w}px`);
-        el.style.setProperty("--aty",
-          `${((ABOUT_END.y + cy - f.y) / f.h) * size.current.h}px`);
+        const ax = ((ABOUT_END.x + cx - f.x) / f.w) * size.current.w;
+        const ay = ((ABOUT_END.y + cy - f.y) / f.h) * size.current.h;
+        el.style.setProperty("--atx", `${ax}px`);
+        el.style.setProperty("--aty", `${ay}px`);
+        /* What is actually left of the frame from where the panel starts. Both
+           are arithmetic on numbers already in hand — no layout read. */
+        const edge = 18;
+        el.style.setProperty("--aw",
+          `${Math.max(240, window.innerWidth - ax - edge)}px`);
+        el.style.setProperty("--ah",
+          `${Math.max(150, window.innerHeight - ay - aboutTop.current - edge)}px`);
       };
       const render = () => {
         const c = cameraAt(s.p, capped.current);
@@ -355,11 +367,11 @@ export function Line() {
         trip++;                      // cancels an arrival still on its way
         gsap.killTweensOf(away);     // and stops a departure mid-flight
         warmed?.remove(); warmed = null;   // a cancelled trip warms nothing
-        contain(false);
         gsap.to(away, { x: 0, y: 0, duration: 1, ease: "power2.inOut", onUpdate: render,
           onComplete: () => {
             away.live = false;
             document.documentElement.classList.remove("at-about");
+            contain(false);
             if (!getView()) getLenis()?.start();
             junction();
           } });
@@ -680,7 +692,7 @@ export function Line() {
           the frame — a paragraph would be vast on a laptop and unreadable on
           a phone. */}
       <div className="ln-about-at" ref={anchor} aria-hidden={undefined}>
-      <div className="ln-about" tabIndex={-1} role="region"
+      <div className="ln-about" data-lenis-prevent tabIndex={-1} role="region"
         aria-label="About Belle Voyage Estates">
         <h2>About</h2>
         {ABOUT_COPY.map((t) => <p key={t.slice(0, 24)}>{t}</p>)}

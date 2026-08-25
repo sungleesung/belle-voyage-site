@@ -56,7 +56,7 @@ html.menu-open, html.menu-open body{overflow:hidden;}
 .mh-legal a:hover{color:var(--ink);}
 
 /* ── the line ──────────────────────────────────────────────── */
-.ln{position:relative; height:100dvh; overflow:hidden;}
+.ln{position:relative; height:100dvh; overflow:clip;}
 .ln-bg{position:absolute; inset:0; background:#000;}
 /* White sheets over the black for the regions, and stays until the line eats
    it. The section owns its own palette in both themes — it opens black,
@@ -161,12 +161,19 @@ html.menu-open, html.menu-open body{overflow:hidden;}
   visibility:hidden; pointer-events:none;}
 .at-about .ln-about-at{visibility:visible;}
 .at-about .ln-about{pointer-events:auto;}
+/* --aw and --ah are what is left of the frame from wherever the station has
+   parked, written by carry(). A vw fraction cannot do this job: the panel's
+   left edge moves with the viewport, so any single fraction either overflows
+   on a landscape phone or starves the measure on a laptop. The fallbacks are
+   only for the frame before the first carry(). On a small phone the copy is
+   taller than what is left, so the panel scrolls rather than putting its own
+   Back button 90px below the fold with the masthead inert — the only way out
+   was the Escape key. Lenis is stopped during the excursion and a stopped
+   Lenis still swallows wheel and touch, hence data-lenis-prevent. */
 .ln-about{position:absolute; left:0; top:clamp(40px,6.5dvh,80px);
-  /* Every pixel the 16px floor can have on a phone; from 560 up the panel
-     is anchored well inside the frame and needs the tighter fraction. */
-  width:min(640px, 88vw); outline:none;
+  width:min(640px, var(--aw, 84vw)); outline:none;
+  max-height:var(--ah, none); overflow-y:auto; overscroll-behavior:contain;
   display:grid; gap:clamp(11px,1.6dvh,20px); color:#fff;}
-@media(min-width:560px){ .ln-about{width:min(640px, 60vw);} }
 .ln-about h2{margin:0; font-size:clamp(27px,4.4vw,56px); letter-spacing:-.045em;}
 .ln-about p{margin:0; line-height:1.5; max-width:60ch;
   font-size:clamp(16px,1.3vw,19px); color:rgba(255,255,255,.82);}
@@ -644,7 +651,8 @@ html.menu-open, html.menu-open body{overflow:hidden;}
 /* Dimming to .32 was fine while these were `disabled` and exempt from
    contrast. They are aria-disabled now — still focusable, still announced as
    buttons — so the bound reads as a colour step that holds AA, not a fade. */
-.fl-step button[aria-disabled="true"]{color:var(--muted); cursor:default;}
+.fl-step button[aria-disabled="true"]{color:var(--muted); cursor:default;
+  border-width:1px;}
 
 .fl-foot{position:sticky; bottom:0; background:var(--paper);
   border-top:1px solid var(--rule); padding:14px clamp(18px,3vw,28px);
