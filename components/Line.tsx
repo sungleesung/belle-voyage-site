@@ -32,7 +32,11 @@ function Shape({ shape }: { shape: "circle" | "square" | "triangle" }) {
     strokeWidth: 8, strokeLinejoin: "round" as const };
   if (shape === "circle") return <circle r="30" {...p} />;
   if (shape === "square") return <rect x="-26" y="-26" width="52" height="52" {...p} />;
-  return <polygon points="0,-31 28,18 -28,18" {...p} />;
+  /* Matched by area, not by box. The disc and the square were already tuned to
+     each other; a triangle in the same 60-unit frame carries half their visual
+     mass, so it is scaled until the ink matches — which makes it wider than
+     both, and correct. */
+  return <polygon points="0,-43 39,25 -39,25" {...p} />;
 }
 
 export function Line() {
@@ -298,8 +302,13 @@ export function Line() {
       const contain = (on: boolean) => {
         const mh = document.querySelector<HTMLElement>(".mh");
         const ct = document.querySelector<HTMLElement>(".ct");
+        /* The fallback nav is the one live thing left inside <main>, and it
+           slides itself up on focus — so without this, Tab out of the About
+           panel raised it over the excursion it was meant to be behind. */
+        const fb = root.current?.querySelector<HTMLElement>(".ln-fallback");
         if (mh) mh.inert = on;
         if (ct) ct.inert = on;
+        if (fb) fb.inert = on;
         root.current?.querySelectorAll("svg a").forEach((a) => {
           if (on) a.setAttribute("tabindex", "-1");
           else a.removeAttribute("tabindex");
@@ -338,6 +347,7 @@ export function Line() {
       const leaveAbout = () => {
         if (!away.live) return;
         trip++;                      // cancels an arrival still on its way
+        gsap.killTweensOf(away);     // and stops a departure mid-flight
         contain(false);
         gsap.to(away, { x: 0, y: 0, duration: 1, ease: "power2.inOut", onUpdate: render,
           onComplete: () => {
@@ -361,9 +371,13 @@ export function Line() {
         const pre = document.createElement("link");
         pre.rel = "prefetch"; pre.href = "/properties";
         document.head.appendChild(pre);
+        const token = ++trip;
         gsap.to(away, { x: PROPS_CAM.x, y: PROPS_CAM.y, duration: 0.95,
           ease: "power2.in", onUpdate: render,
-          onComplete: () => { location.href = "/properties"; } });
+          /* Escape bumps the token. Without this the camera visibly turned
+             back and the page navigated anyway — the user cancelled and went
+             regardless. */
+          onComplete: () => { if (token === trip) location.href = "/properties"; } });
       };
 
       const onAboutClick = (e: MouseEvent) => {
@@ -390,6 +404,21 @@ export function Line() {
            popup and leave About together. */
         if (e.key === "Escape" && away.live && !getView()) leaveAbout();
       };
+      /* Leaving for /properties parks the camera off the drawing, stops Lenis
+         and inerts everything. The back button restores all of that from the
+         bfcache — a page with nothing clickable anywhere on it. Undo it on the
+         way back in. */
+      const onShow = (e: PageTransitionEvent) => {
+        if (!e.persisted) return;
+        gsap.killTweensOf(away);
+        away.x = 0; away.y = 0; away.live = false;
+        trip++;
+        document.documentElement.classList.remove("at-about");
+        contain(false);
+        render();
+        if (!getView()) getLenis()?.start();
+      };
+      addEventListener("pageshow", onShow);
       addEventListener("click", onAboutClick);
       addEventListener("keydown", onAboutKey);
       /* A shared or bookmarked #about has to arrive at About. With motion on,
@@ -480,6 +509,7 @@ export function Line() {
       const offView = onView((v) => { if (!v) onScroll(); });
       const stopSettling = () => {
         offView();
+        removeEventListener("pageshow", onShow);
         removeEventListener("click", onAboutClick);
         removeEventListener("keydown", onAboutKey);
         clearTimeout(idle);
@@ -559,8 +589,10 @@ export function Line() {
     <div className="ln" ref={root}>
       <div className="ln-bg" />
       <div className="ln-sheet" ref={sheet} />
+      {/* Not a landmark: every link inside is aria-hidden, so a nav role here
+          announces as an empty navigation. The real one is .ln-fallback. */}
       <svg ref={svg} className="ln-svg" viewBox="0 0 1000 700"
-        preserveAspectRatio="xMidYMid meet" role="navigation" aria-label="Main">
+        preserveAspectRatio="xMidYMid meet" aria-hidden="true">
         <g ref={cam}>
           {/* Measured, never painted — it is what the camera rides. */}
           <path ref={introPath} d={dRound(INTRO)} fill="none" stroke="none" />
@@ -662,7 +694,16 @@ export function Line() {
 
     {/* Without motion the camera never travels, so the regions would be
         unreachable. They get a plain list instead — same links, no journey. */}
-    <nav className="ln-fallback" aria-label="Regions">
+    <nav className="ln-fallback" aria-label="Main">
+      {STOPS.map((st) => (
+        <a key={st.label} href={st.href}>
+          <span className="lf-dot lf-plain" aria-hidden="true" />
+          <span>{st.label}</span>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M3 12h16M13 6l6 6-6 6" /></svg>
+        </a>
+      ))}
       {REGIONS.map((r) => (
         <a key={r.code} href={r.href}>
           <span className="lf-dot" style={{ background: r.colour }} aria-hidden="true" />

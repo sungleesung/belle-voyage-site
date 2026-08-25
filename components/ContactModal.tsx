@@ -11,10 +11,29 @@ export function ContactModal() {
   const [opening, setOpening] = useState(0);
   const dlg = useRef<HTMLDialogElement>(null);
 
+  /* Whatever had focus when it opened, so closing returns there. The menu link
+     is often gone by then — the menu closes underneath — so fall back to the
+     stop on the line rather than dropping focus on <body>. */
+  const from = useRef<HTMLElement | null>(null);
   useEffect(() => onView((v) => {
     setOpen(v === "contact");
-    if (v === "contact") setOpening((n) => n + 1);
+    if (v === "contact") {
+      from.current = document.activeElement as HTMLElement | null;
+      setOpening((n) => n + 1);
+    }
   }), []);
+
+  useEffect(() => {
+    if (open) return;
+    const back = from.current;
+    /* Opened from the masthead menu, the link that opened it is gone — the
+       menu is hidden={!open} and unmounts it. The burger is what stands in its
+       place on screen; the stop on the line is aria-hidden and no place to
+       leave focus. */
+    const fallback = document.querySelector<HTMLElement>(".mh-burger");
+    const target = back?.isConnected ? back : fallback;
+    target?.focus({ preventScroll: true });
+  }, [open]);
 
   /* A native dialog carries the focus trap, the Escape key and the inert
      background itself. Hand-rolling those is where modals usually go wrong. */

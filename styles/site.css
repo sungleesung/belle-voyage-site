@@ -12,9 +12,13 @@
   vertical-align:-.032em; margin:0 .008em;}
 .mh-wm .ring svg{display:block; overflow:visible;}
 
+/* The 44px target used to be reached with horizontal padding, which left the
+   bars 8px inside the gutter — the one fixed element on every page, not
+   aligned to the page. Negative margin keeps the target and puts the ink on
+   the margin. */
 .mh-burger{position:relative; z-index:2; width:44px; height:44px;
-  display:grid; align-content:center; gap:5px; background:none; border:0;
-  cursor:pointer; padding:0 8px;}
+  display:grid; align-content:center; gap:4px; background:none; border:0;
+  cursor:pointer; padding:0; margin-right:0;}
 .mh-burger i{display:block; height:2px; background:#fff; border-radius:var(--r-cap);
   transition:transform var(--t-4) var(--e-line), opacity var(--t-2) var(--e-line);}
 .mh-burger[aria-expanded="true"] i:nth-of-type(1){transform:translateY(7px) rotate(45deg);}
@@ -131,12 +135,13 @@ html.menu-open, html.menu-open body{overflow:hidden;}
 .motion .ln-fallback:focus-within{transform:none;}
 @media(prefers-reduced-motion:reduce){ .motion .ln-fallback{transition:none;} }
 .ln-fallback a{display:flex; align-items:center; gap:16px; padding:24px var(--pad);
-  border-bottom:1px solid rgba(0,0,0,.16); min-height:44px;
+  border-bottom:1px solid var(--rule-strong); min-height:44px;
   font-weight:700; font-size:clamp(19px,2.2vw,30px); letter-spacing:-.03em;
   transition:opacity var(--t-4) var(--e-line);}
 .ln-fallback a:hover{opacity:.55;}
 .ln-fallback svg{margin-left:auto;}
 .lf-dot{width:26px; height:26px; border-radius:var(--r-globe); flex:none;}
+.lf-plain{border:3px solid currentColor; background:none;}
 
 /* ── About, at the end of the branch ───────────────────────────
    Placed in screen terms from the same frame the camera uses, like the intro
@@ -151,15 +156,17 @@ html.menu-open, html.menu-open body{overflow:hidden;}
 .at-about .ln-about-at{visibility:visible;}
 .at-about .ln-about{pointer-events:auto;}
 .ln-about{position:absolute; left:0; top:clamp(40px,6.5dvh,80px);
-  width:min(640px, 68vw); outline:none;
+  /* The page gutter, not an arbitrary vw — at 390 this is every pixel the
+     16px floor can have, and the measure still lands at 41 characters. */
+  width:min(640px, calc(100vw - var(--pad) * 2)); outline:none;
   display:grid; gap:clamp(11px,1.6dvh,20px); color:#fff;}
 .ln-about h2{margin:0; font-size:clamp(27px,4.4vw,56px); letter-spacing:-.045em;}
-.ln-about p{margin:0; line-height:1.5;
-  font-size:clamp(14.5px,1.3vw,19px); color:rgba(255,255,255,.82);}
+.ln-about p{margin:0; line-height:1.5; max-width:60ch;
+  font-size:clamp(16px,1.3vw,19px); color:rgba(255,255,255,.82);}
 @media(max-height:460px){
   .ln-about{gap:8px;}
   .ln-about h2{font-size:clamp(22px,4vw,30px);}
-  .ln-about p{font-size:14px; line-height:1.42;}
+  .ln-about p{font-size:16px; line-height:1.4;}
   .ln-back{margin-top:0; padding:9px 0; min-height:38px;}
 }
 .ln-back{justify-self:start; display:inline-flex; align-items:center; gap:9px;
@@ -188,7 +195,8 @@ html.menu-open, html.menu-open body{overflow:hidden;}
   max-width:920px; width:100%;}
 .ct-row{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr);
   gap:clamp(14px,2vw,22px);}
-@media(max-width:640px){.ct-row{grid-template-columns:minmax(0,1fr);}}
+@media(max-width:640px){.ct-row{grid-template-columns:minmax(0,1fr);
+  gap:clamp(14px,2.4dvh,22px);}}
 .ct-f{display:flex; flex-direction:column; gap:8px;}
 .ct-f span{font-size:var(--t-warn); letter-spacing:.14em; text-transform:uppercase;
   color:rgba(255,255,255,.55); font-weight:700;}
@@ -197,7 +205,12 @@ html.menu-open, html.menu-open body{overflow:hidden;}
   padding:12px 0; min-height:44px; border-radius:0;
   transition:border-color var(--t-4) var(--e-line);}
 .ct-f textarea{resize:vertical;}
-.ct-f input:focus, .ct-f textarea:focus{outline:none; border-bottom-color:#fff;}
+/* The old rule was outline:none plus a coloured bottom border — a 2px
+   indicator on one edge of four, and it beat the global focus ring on
+   specificity. A focus indicator is a perimeter. */
+.ct-f input:focus, .ct-f textarea:focus{border-bottom-color:#fff;}
+.ct-f input:focus-visible, .ct-f textarea:focus-visible{
+  outline:3px solid var(--eu); outline-offset:2px;}
 
 .ct-send{align-self:flex-start; display:inline-flex; align-items:center; gap:12px;
   margin-top:8px; padding:16px 28px; min-height:44px; cursor:pointer;
@@ -210,6 +223,10 @@ html.menu-open, html.menu-open body{overflow:hidden;}
 /* Off-screen, not display:none — see EnquiryForm. */
 .ct-pot{position:absolute; left:-9999px; width:1px; height:1px; overflow:hidden;}
 
+/* Under the field it belongs to, in the same red, italic-free — the face has
+   no italic and the synthesised one looks cheap. */
+.ct-fe{display:block; margin-top:8px; font-size:13px; font-style:normal;
+  letter-spacing:.02em; color:#ffb3ae;}
 .ct-err{color:#FFD6D0; font-size:var(--t-body); margin:0;
   border-left:2px solid var(--ca); padding-left:12px;}
 .ct-done{display:grid; gap:clamp(18px,2.6dvh,26px); justify-items:start;
@@ -222,7 +239,12 @@ html.menu-open, html.menu-open body{overflow:hidden;}
   text-decoration:underline; text-underline-offset:5px;
   transition:opacity var(--t-4) var(--e-line);}
 .ct-again:hover{opacity:.65;}
-.ct-f [aria-invalid="true"]{border-bottom-color:var(--ca);}
+/* :focus is (0,2,1) and the plain attribute selector (0,2,0), so the white
+   focus border was winning — and we focus the offending field deliberately, so
+   the invalid state was invisible for exactly as long as the user was looking
+   at it. The second selector outranks focus. */
+.ct-f [aria-invalid="true"],
+.ct-f [aria-invalid="true"]:focus{border-bottom-color:var(--ca);}
 .ct-send svg{transition:transform var(--t-4) var(--e-arrive);}
 .ct-send:hover svg{transform:translateX(4px);}
 
@@ -230,7 +252,7 @@ html.menu-open, html.menu-open body{overflow:hidden;}
   border-top:1px solid rgba(255,255,255,.38);}
 @media(max-width:760px){.ct-paths{grid-template-columns:minmax(0,1fr);}}
 .ct-path{display:grid; gap:6px; padding:clamp(22px,4dvh,40px) 0;
-  border-bottom:1px solid var(--rule); padding-right:clamp(16px,3vw,48px);
+  border-bottom:1px solid rgba(255,255,255,.38); padding-right:clamp(16px,3vw,48px);
   position:relative; transition:opacity var(--t-4) var(--e-line);}
 .ct-path + .ct-path{border-left:1px solid rgba(255,255,255,.38); padding-left:clamp(16px,3vw,48px);}
 @media(max-width:760px){.ct-path + .ct-path{border-left:0; padding-left:0;}}
@@ -241,7 +263,7 @@ html.menu-open, html.menu-open body{overflow:hidden;}
   transform:translateY(-50%); transition:transform var(--t-4) var(--e-arrive);}
 .ct-path:hover svg{transform:translateY(-50%) translateX(5px);}
 
-.ft{border-top:1px solid rgba(255,255,255,.18); background:#000; color:#fff;
+.ft{border-top:1px solid rgba(255,255,255,.38); background:#000; color:#fff;
   padding:clamp(40px,8dvh,90px) var(--pad) clamp(28px,5dvh,52px);
   display:grid; grid-template-columns:minmax(0,1.15fr) minmax(0,2fr);
   gap:clamp(28px,5vw,80px) clamp(24px,4vw,64px);}
@@ -253,7 +275,10 @@ html.menu-open, html.menu-open body{overflow:hidden;}
 .ft-wm2{display:block;}
 .ft-map{grid-column:2; display:grid;
   grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:clamp(20px,3vw,48px);}
-.ft-map h3{font-size:15px; font-weight:700; letter-spacing:-.01em; color:#fff; margin-bottom:14px;}
+/* A heading has to sit closer to its list than the list rows sit to each
+   other, or it reads as one more row. Ink-to-ink was 21px against a 20px row
+   pitch, on all three columns. */
+.ft-map h3{font-size:15px; font-weight:700; letter-spacing:-.01em; color:#fff; margin-bottom:4px;}
 .ft-map ul{list-style:none; margin:0; padding:0; display:grid; gap:2px;}
 .ft-map a{display:block; padding:7px 0; font-size:14.5px; color:rgba(255,255,255,.62);
   transition:color var(--t-4) var(--e-line);}
@@ -262,7 +287,7 @@ html.menu-open, html.menu-open body{overflow:hidden;}
   font-size:clamp(17px,1.7vw,22px); letter-spacing:-.03em;}
 .ft-reach a{text-decoration:underline; text-underline-offset:5px;}
 .ft-reach a:hover{opacity:.65;}
-.ft-credit{grid-column:1 / -1; font-size:var(--t-warn); color:rgba(255,255,255,.52);
+.ft-credit{grid-column:1 / -1; font-size:15px; color:rgba(255,255,255,.66);
   border-top:1px solid rgba(255,255,255,.14); padding-top:clamp(18px,3dvh,30px);}
 .ft-credit a{text-decoration:underline; text-underline-offset:3px;}
 .ft-credit a:hover{color:#fff;}
@@ -384,20 +409,23 @@ html.menu-open, html.menu-open body{overflow:hidden;}
 .pr-home .ring{display:inline-block; width:.578em; height:.578em; vertical-align:-.032em;}
 .pr-home .ring svg{display:block; overflow:visible;}
 .pr-head h1{margin:0; font-size:var(--t-id); letter-spacing:-.045em; line-height:.92;}
-.pr-note{margin:0; font-size:var(--t-warn); letter-spacing:.02em;
+/* Hanging the rule and the padding into the gutter, so the sentence itself
+   starts on the same edge as the h1 and the filter bullets rather than 17px
+   inside them. */
+.pr-note{margin:0 0 0 -19px; font-size:15px; letter-spacing:.02em; line-height:1.45;
   color:var(--ink); background:var(--ca-wash); border-left:3px solid var(--ca);
-  padding:9px 14px; justify-self:start; max-width:62ch;}
+  padding:8px 16px; justify-self:start; max-width:62ch;}
 
 /* Route bullets, not tabs. */
-.pr-filter{display:flex; flex-wrap:wrap; gap:8px; padding-bottom:clamp(12px,2dvh,20px);}
-.pr-filter button{--c:var(--muted); display:inline-flex; align-items:center; gap:9px;
+.pr-filter{display:flex; flex-wrap:wrap; gap:12px; padding-bottom:clamp(12px,2dvh,20px);}
+.pr-filter button{--c:var(--muted); display:inline-flex; align-items:center; gap:8px;
   padding:9px 16px; min-height:44px; cursor:pointer; font:inherit; font-weight:700;
   font-size:var(--t-body); letter-spacing:-.02em; border-radius:var(--r-cap);
   border:2px solid var(--c); background:none; color:var(--ink);
   transition:background var(--t-4) var(--e-line), color var(--t-4) var(--e-line);}
 .pr-filter button span{font-size:var(--t-warn); opacity:.62; font-variant-numeric:tabular-nums;}
 .pr-filter button[data-on="true"]{background:var(--c); color:var(--paper);}
-.pr-filter button[data-on="true"] span{opacity:.8;}
+.pr-filter button[data-on="true"] span{font-weight:500;}
 
 .pr-body{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);
   min-height:0; border-top:1px solid var(--rule);}
@@ -412,10 +440,12 @@ html.menu-open, html.menu-open body{overflow:hidden;}
 
 /* The station shapes the system already uses: hollow ring is a flagship,
    solid disc a standard letting, diamond a limited run — short stay. */
-.pr-stop{grid-area:stop; width:20px; height:20px; flex:none;}
+.pr-stop{grid-area:stop; width:20px; height:20px; flex:none;
+  place-self:center;}
 .pr-stop[data-kind="ring"]{border:4px solid var(--c); border-radius:var(--r-globe);}
-.pr-stop[data-kind="disc"]{background:var(--c); border-radius:var(--r-globe);}
-.pr-stop[data-kind="diamond"]{border:4px solid var(--c); transform:rotate(45deg) scale(.86);}
+.pr-stop[data-kind="disc"]{background:var(--c); border-radius:var(--r-globe);
+  transform:scale(.82);}
+.pr-stop[data-kind="diamond"]{border:4px solid var(--c); transform:rotate(45deg) scale(.7);}
 .pr-name{grid-area:name; font-weight:700; letter-spacing:-.025em;
   font-size:clamp(17px,1.5vw,21px);}
 .pr-city{grid-area:city; font-size:var(--t-warn); color:var(--muted); text-align:right;}
@@ -441,7 +471,7 @@ html.menu-open, html.menu-open body{overflow:hidden;}
   .pr-body{grid-template-columns:minmax(0,1fr); grid-template-rows:44dvh auto;}
   .pr-map{border-left:0; border-bottom:1px solid var(--rule); order:-1; min-height:44dvh;}
   .pr-list{overflow:visible;}
-  .pr-list a{grid-template-columns:auto minmax(0,1fr) auto;
+  .pr-list button{grid-template-columns:auto minmax(0,1fr) auto;
     grid-template-areas:"stop name arrow" "stop city arrow" "stop spec price";}
   .pr-city{text-align:left;}
 }
@@ -537,8 +567,11 @@ html.menu-open, html.menu-open body{overflow:hidden;}
 .fl[open]{display:grid; place-items:center;}
 .fl::backdrop{background:color-mix(in srgb, var(--ink) 46%, transparent);
   backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);}
+/* scroll-padding, so focusing an element inside never parks it under the
+   sticky header or footer (WCAG 2.4.11). At 1280x640 the steppers were landing
+   completely behind "Show 12 properties". */
 .fl-panel{width:min(560px,100%); max-height:calc(100dvh - var(--pad) * 2);
-  overflow-y:auto; background:var(--paper); color:var(--ink);
+  overflow-y:auto; scroll-padding-block:84px 92px; background:var(--paper); color:var(--ink);
   border:1px solid var(--rule); display:grid; align-content:start;}
 .fl-head{position:sticky; top:0; z-index:2; background:var(--paper);
   border-bottom:1px solid var(--rule); padding:16px clamp(18px,3vw,28px);
@@ -549,11 +582,13 @@ html.menu-open, html.menu-open body{overflow:hidden;}
 .fl-x:hover{color:var(--ink);}
 .fl-x svg{width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:2.2;
   stroke-linecap:round;}
+/* gap 8, so the heading binds to what follows it; the 24px section padding
+   is what separates one section from the next. */
 .fl-sec{padding:clamp(18px,3dvh,26px) clamp(18px,3vw,28px);
-  border-bottom:1px solid var(--rule); display:grid; gap:14px;}
+  border-bottom:1px solid var(--rule); display:grid; gap:8px;}
 .fl-sec h3{margin:0; font-size:var(--t-warn); font-weight:700; letter-spacing:.14em;
   text-transform:uppercase; color:var(--muted);}
-.fl-hint{margin:-4px 0 0; font-size:var(--t-warn); color:var(--muted); line-height:1.45;}
+.fl-hint{margin:0; font-size:15px; color:var(--muted); line-height:1.45;}
 
 .fl-seg{display:flex; flex-wrap:wrap; gap:8px;}
 .fl-seg button{padding:10px 16px; min-height:44px; cursor:pointer; font:inherit;
@@ -581,7 +616,12 @@ html.menu-open, html.menu-open body{overflow:hidden;}
 .fl-range input::-moz-range-thumb{pointer-events:auto; width:26px; height:26px;
   cursor:grab; border-radius:var(--r-globe); background:var(--paper);
   border:3px solid var(--us);}
+.fl-range input:focus-visible{outline:none;}
 .fl-range input:focus-visible::-webkit-slider-thumb{outline:2px solid var(--ink);
+  outline-offset:2px;}
+/* Both inputs occupy identical rects, so the outline on the input box cannot
+   tell min from max — the indicator has to be on the thumb, in both engines. */
+.fl-range input:focus-visible::-moz-range-thumb{outline:2px solid var(--ink);
   outline-offset:2px;}
 .fl-ends{display:flex; justify-content:space-between; font-size:var(--t-warn);
   font-weight:700; font-variant-numeric:tabular-nums;}
@@ -593,8 +633,12 @@ html.menu-open, html.menu-open body{overflow:hidden;}
   border:2px solid var(--rule-strong); border-radius:var(--r-globe);
   background:none; color:var(--ink);
   transition:border-color var(--t-4) var(--e-line), opacity var(--t-4) var(--e-line);}
-.fl-step button:hover:not(:disabled){border-color:var(--ink);}
-.fl-step button:disabled{opacity:.32; cursor:default;}
+.fl-step button:hover:not([aria-disabled="true"]){border-color:var(--ink);}
+/* Dimming to .32 was fine while these were `disabled` and exempt from
+   contrast. They are aria-disabled now — still focusable, still announced as
+   buttons — so the bound reads as a colour step that holds AA, not a fade. */
+.fl-step button[aria-disabled="true"]{color:var(--muted); cursor:default;
+  border-color:var(--rule);}
 
 .fl-foot{position:sticky; bottom:0; background:var(--paper);
   border-top:1px solid var(--rule); padding:14px clamp(18px,3vw,28px);

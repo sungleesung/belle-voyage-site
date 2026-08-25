@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { Arrow } from "./Arrow";
 
 /* One form, two doorways — the section at the foot of the page and the popup
@@ -14,6 +14,7 @@ export function EnquiryForm() {
   const [state, setState] = useState<"idle" | "sending" | "done">("idle");
   const [err, setErr] = useState<{ message: string; field?: string } | null>(null);
   const form = useRef<HTMLFormElement>(null);
+  const uid = useId();
   const done = useRef<HTMLDivElement>(null);
   const alert = useRef<HTMLParagraphElement>(null);
 
@@ -23,6 +24,15 @@ export function EnquiryForm() {
      gets the result announced: a live region inserted with its text already in
      it is the one case screen readers reliably miss. */
   useEffect(() => { if (state === "done") done.current?.focus(); }, [state]);
+  /* The message belongs to a field, so it renders under that field and is
+     named by it. It used to sit above the button — up to 344px from the input
+     it was about, and connected to it by nothing a screen reader could follow,
+     so focus landed on a field whose problem was announced nowhere. */
+  const at = (name: string) =>
+    err?.field === name
+      ? { "aria-invalid": true as const, "aria-describedby": `${uid}-${name}` }
+      : {};
+
   useEffect(() => {
     if (!err) return;
     const field = err.field
@@ -73,24 +83,24 @@ export function EnquiryForm() {
       <div className="ct-row">
         <label className="ct-f">
           <span>Name</span>
-          <input name="name" type="text" autoComplete="name"
-            aria-invalid={err?.field === "name" || undefined} required />
+          <input name="name" type="text" autoComplete="name" {...at("name")} required />
+          {err?.field === "name" && <em className="ct-fe" id={`${uid}-name`}>{err.message}</em>}
         </label>
         <label className="ct-f">
           <span>Email</span>
-          <input name="email" type="email" autoComplete="email"
-            aria-invalid={err?.field === "email" || undefined} required />
+          <input name="email" type="email" autoComplete="email" {...at("email")} required />
+          {err?.field === "email" && <em className="ct-fe" id={`${uid}-email`}>{err.message}</em>}
         </label>
       </div>
       <label className="ct-f">
         <span>Subject</span>
-        <input name="subject" type="text"
-          aria-invalid={err?.field === "subject" || undefined} required />
+        <input name="subject" type="text" {...at("subject")} required />
+        {err?.field === "subject" && <em className="ct-fe" id={`${uid}-subject`}>{err.message}</em>}
       </label>
       <label className="ct-f">
         <span>Message</span>
-        <textarea name="message" rows={5}
-          aria-invalid={err?.field === "message" || undefined} required />
+        <textarea name="message" rows={5} {...at("message")} required />
+        {err?.field === "message" && <em className="ct-fe" id={`${uid}-message`}>{err.message}</em>}
       </label>
 
       {/* Off-screen rather than display:none — a bot that checks visibility
@@ -99,7 +109,9 @@ export function EnquiryForm() {
         <label>Website<input name="website" type="text" tabIndex={-1} autoComplete="off" /></label>
       </div>
 
-      {err && <p className="ct-err" ref={alert} role="alert" tabIndex={-1}>{err.message}</p>}
+      {/* Only what no field owns — a network failure, a rate limit. */}
+      {err && !err.field &&
+        <p className="ct-err" ref={alert} role="alert" tabIndex={-1}>{err.message}</p>}
 
       <button className="ct-send" type="submit" disabled={state === "sending"}>
         {state === "sending" ? "Sending…" : "Send"} <Arrow dir="right" size={20} />

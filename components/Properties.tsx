@@ -237,7 +237,18 @@ export function Properties({ initial }: { initial: Market | "all" }) {
                   data-on={b.on >= min && b.on <= max} />
               ))}
             </div>
-            <div className="fl-range">
+            {/* Click anywhere on the track moves the nearer handle. A native
+                range ships this; making the inputs pointer-events:none so the
+                two can overlap took it away, leaving dragging a 26px thumb as
+                the only pointer path (WCAG 2.5.7). */}
+            <div className="fl-range"
+              onPointerDown={(e) => {
+                const box = e.currentTarget.getBoundingClientRect();
+                const f = Math.min(1, Math.max(0, (e.clientX - box.left) / box.width));
+                const v = Math.round((floor + f * (ceil - floor)) / 100) * 100;
+                if (Math.abs(v - min) <= Math.abs(v - max)) setLo(Math.min(v, max - 100));
+                else setHi(Math.max(v, min + 100));
+              }}>
               <input type="range" min={floor} max={ceil} step={100} value={min}
                 aria-label="Minimum price"
                 onChange={(e) => setLo(Math.min(+e.target.value, max - 100))} />
@@ -257,11 +268,14 @@ export function Properties({ initial }: { initial: Market | "all" }) {
               ([label, val, set]) => (
                 <div className="fl-step" key={label}>
                   <span>{label}</span>
+                  {/* aria-disabled, not disabled: disabling the button under
+                      the user's own focus dropped it to <body>, outside the
+                      open dialog, and the next Tab restarted from the top. */}
                   <button type="button" onClick={() => set(Math.max(0, val - 1))}
-                    disabled={val === 0} aria-label={`Fewer ${label.toLowerCase()}`}>&minus;</button>
+                    aria-disabled={val === 0} aria-label={`Fewer ${label.toLowerCase()}`}>&minus;</button>
                   <b>{STEPS[val]}</b>
                   <button type="button" onClick={() => set(Math.min(5, val + 1))}
-                    disabled={val === 5} aria-label={`More ${label.toLowerCase()}`}>+</button>
+                    aria-disabled={val === 5} aria-label={`More ${label.toLowerCase()}`}>+</button>
                 </div>
               ))}
           </section>
