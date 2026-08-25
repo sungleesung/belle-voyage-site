@@ -55,9 +55,6 @@ export function Line() {
   /* The panel's own offset inside the anchor. Constant until layout changes,
      and read there rather than per frame. */
   const aboutTop = useRef(60);
-  /* Where the wipe edge has to reach before the masthead is standing on white.
-     A function of the viewport, so it is recomputed with the frame. */
-  const mhCross = useRef(2.31);
   const gutter = useRef(20);
   /* Set while the intro owns the camera, so a resize re-derives it. Null after
      the intro hands over, because then the scroll owns the camera. */
@@ -71,20 +68,40 @@ export function Line() {
      shows the drawing at the placeholder's scale while the plate — HTML, placed
      from the real frame — has already been positioned for the true one, and
      they disagree for a frame. */
+  /* Which pole the mark is standing on. The first version worked this out from
+     the timeline's position and where the contact sheet had reached, and was
+     blind to the swallow — which blacks the whole frame about a screen before
+     the contact sheet arrives, so the panel stayed white on a black page for
+     most of a viewport. Inference cannot be made complete here; every ground
+     the site ever grows would have to be taught to it.
+
+     So ask instead. elementsFromPoint returns the whole stack under the mark,
+     the mark's own layers are skipped, and the first full-bleed ground decides.
+     Strokes and plates on the way are stepped over: they are drawn ON a ground
+     rather than being one. Contrast does not depend on any of this — the ink
+     is on the panel at 21:1 either way — so a wrong answer costs a visible
+     edge, never a legible mark. */
+  const paint = () => {
+    const mh = document.querySelector<HTMLElement>(".mh");
+    if (!mh) return;
+    const box = mh.getBoundingClientRect();
+    let lit = false;
+    for (const el of document.elementsFromPoint(box.left + box.width / 2, box.bottom + 6)) {
+      if (el.closest(".mh")) continue;
+      const c = el.classList;
+      if (c.contains("ln-gulp") || c.contains("ln-bg")) break;
+      if (c.contains("ln-sheet") || el.closest(".ln-fallback")) { lit = true; break; }
+      if (el.closest(".ct") || el.closest(".ft")) break;
+    }
+    document.documentElement.classList.toggle("mh-light", lit);
+  };
+
   const fit = () => {
     const panel = anchor.current?.querySelector<HTMLElement>(".ln-about");
     if (panel) aboutTop.current = panel.offsetTop;
-    /* The sheet clips downward from the top over timeline 2.1 -> 3.0 on
-       power2.inOut, so the masthead is covered before anything else is. Invert
-       the ease at the fraction of the viewport the mark's underside sits at:
-       for r < 0.5, power2.inOut is 2t², so t = sqrt(r / 2). */
     gutter.current = parseFloat(
       getComputedStyle(document.documentElement).getPropertyValue("--pad")) || 20;
-    const mh = document.querySelector<HTMLElement>(".mh");
-    if (mh) {
-      const r = Math.min(0.5, mh.getBoundingClientRect().bottom / window.innerHeight);
-      mhCross.current = 2.1 + 0.9 * Math.sqrt(r / 2);
-    }
+    paint();
     const el = svg.current; if (!el) return;
     const r = el.getBoundingClientRect();
     size.current = { w: r.width, h: r.height };
@@ -110,7 +127,17 @@ export function Line() {
     /* Before .ready, so nothing is ever shown at the placeholder scale. */
     fit();
     svg.current?.classList.add("ready");
-    if (reduced()) return;
+    if (reduced()) {
+      paint();
+      const repaint = () => paint();
+      addEventListener("scroll", repaint, { passive: true });
+      addEventListener("resize", repaint);
+      return () => {
+        removeEventListener("scroll", repaint);
+        removeEventListener("resize", repaint);
+        document.documentElement.classList.remove("mh-light");
+      };
+    }
     gsap.registerPlugin(ScrollTrigger);
     document.documentElement.classList.add("motion");
 
@@ -299,25 +326,6 @@ export function Line() {
         el.style.setProperty("--ah",
           `${Math.max(150, window.innerHeight - ay - aboutTop.current - edge)}px`);
       };
-      /* The masthead carries its own ground now, and that ground matches the
-         page's so the panel is invisible at rest. Two facts decide which:
-         whether the wipe has reached the mark, and whether the black contact
-         sheet has risen over it. Contrast never depends on getting this right
-         — the ink is always on the panel, at 21:1 — so the worst a mistake
-         costs is a visible edge for a moment. That is the whole point of
-         painting a ground instead of blending against one. */
-      const dark = () => document.querySelector<HTMLElement>(".ct");
-      let ct: HTMLElement | null = null;
-      let clock: gsap.core.Timeline | null = null;
-      const paint = () => {
-        ct = ct?.isConnected ? ct : dark();
-        const mh = document.querySelector<HTMLElement>(".mh");
-        const covered = ct && mh
-          ? ct.getBoundingClientRect().top <= mh.getBoundingClientRect().bottom
-          : false;
-        document.documentElement.classList.toggle(
-          "mh-light", (clock?.time() ?? 0) >= mhCross.current && !covered);
-      };
       const render = () => {
         const c = cameraAt(s.p, capped.current);
         put(c.x + away.x, c.y + away.y);
@@ -380,6 +388,7 @@ export function Line() {
       const arrive = () => {
         contain(true);
         render();
+        gsap.to(".ln-say", { opacity: 0, duration: 0.35, ease: "power1.out" });
         gsap.to(away, { x: ABOUT_CAM.x, y: ABOUT_CAM.y, duration: 1.15,
           ease: "power2.inOut", onUpdate: render,
           onComplete: () => panel()?.focus({ preventScroll: true }) });
@@ -409,6 +418,8 @@ export function Line() {
         trip++;                      // cancels an arrival still on its way
         gsap.killTweensOf(away);     // and stops a departure mid-flight
         warmed?.remove(); warmed = null;   // a cancelled trip warms nothing
+        gsap.to(".ln-say", { opacity: (tl.time() >= 0.36 ? 0 : 1), duration: 0.5,
+          ease: "power1.out", delay: 0.4 });
         gsap.to(away, { x: 0, y: 0, duration: 1, ease: "power2.inOut", onUpdate: render,
           onComplete: () => {
             away.live = false;
@@ -550,7 +561,6 @@ export function Line() {
       };
       tl.to(".ln-say", { opacity: 0, duration: 0.3, ease: "power1.out" }, 0.06);
 
-      clock = tl;
       const onScroll = () => {
         paint();
         const y = window.scrollY;
@@ -739,7 +749,7 @@ export function Line() {
           ))}
 
           {/* Paints last, so what it grows over includes the regions. */}
-          <path ref={gulp} d={d(ONWARD)} fill="none" stroke="#000" strokeWidth="0"
+          <path ref={gulp} className="ln-gulp" d={d(ONWARD)} fill="none" stroke="#000" strokeWidth="0"
             strokeLinecap="round" strokeLinejoin="round" />
         </g>
       </svg>

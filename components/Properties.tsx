@@ -323,7 +323,7 @@ export function Properties({ initial }: { initial: Market | "all" }) {
                   404s — but the arrow was promising something and delivering a
                   faint tint, at exactly the moment someone is ready to act. */}
               <button type="button" aria-expanded={open === p.id}
-                aria-controls={`d-${p.id}`}
+                aria-controls={open === p.id ? `d-${p.id}` : undefined}
                 onClick={() => { setSel(p.id); setOpen(open === p.id ? null : p.id); }}>
                 <span className="pr-stop" data-kind={shapeOf(p.kind)} aria-hidden="true" />
                 <span className="pr-name">{p.name}</span>
