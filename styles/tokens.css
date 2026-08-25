@@ -22,7 +22,29 @@
   /* One gutter. No container, no max-width, no centred column. */
   --pad:clamp(20px,4vw,72px);
   --row:calc(100dvh / 6);
-  --u:4px;              /* the gap ladder: every gap is a multiple */
+  /* There was a --u:4px here, commented "the gap ladder: every gap is a
+     multiple", referenced nowhere in the repo. It could not have been true:
+     --pad is 4vw between 500 and 1800, so the gutter is off any ladder at
+     essentially every real viewport, and 44 clamps interpolate freely between
+     their endpoints. The rule that IS true, and is lintable:
+
+       AXIS   Vertical steps track dvh, horizontal steps track vw. A gap
+              serving a wrapping layout may use vw for both. --pad is the
+              single gutter and is exempt.
+       VOCAB  Every number an author TYPES — a fixed value, or either endpoint
+              of a clamp — comes from:
+                2 4 8 12 16 20 24 28 32 40 48 56 64 72 80 92 110
+              Values the browser computes BETWEEN two typed endpoints are not
+              authored and are not governed.
+       SCOPE  .doc* is a document grid, not a viewport fit: fixed steps only,
+              no spacing clamps. It is the only surface here with a repeating
+              vertical measure, so it is the only one where a ladder reads as
+              rhythm rather than as a broken fit.
+
+     Governing decisions rather than consequences is the whole point. The
+     other three surfaces are a pinned camera, a 100dvh two-pane map with an
+     internally scrolling list, and a full-height sheet — fixed vertical
+     spacing there does not produce rhythm, it produces a broken fit. */
   --hair:1px;
 
   /* Cap-first type. The manual specifies cap heights, so this system does too.

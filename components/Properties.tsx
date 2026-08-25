@@ -8,6 +8,7 @@ import { Map as MLMap, Marker, LngLatBounds, setWorkerUrl } from "maplibre-gl";
    overridden in site.css. */
 import "maplibre-gl/dist/maplibre-gl.css";
 import { Arrow } from "./Arrow";
+import { setView } from "@/lib/overlay";
 import { MARKETS, PROPERTIES, monthly, priceOf, shapeOf, summary,
   type Kind, type Market, type Property } from "@/lib/properties";
 
@@ -72,6 +73,7 @@ export function Properties({ initial }: { initial: Market | "all" }) {
   const [panel, setPanel] = useState(false);
   const dlg = useRef<HTMLDialogElement>(null);
   const [sel, setSel] = useState<string | null>(null);
+  const [open, setOpen] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
   const host = useRef<HTMLDivElement>(null);
   const map = useRef<InstanceType<typeof MLMap> | null>(null);
@@ -85,13 +87,15 @@ export function Properties({ initial }: { initial: Market | "all" }) {
   }, []);
   const min = lo ?? floor, max = hi ?? ceil;
 
-  const shown = useMemo(() => PROPERTIES.filter((p) =>
-    (market === "all" || p.market === market) &&
+  const others = useMemo(() => PROPERTIES.filter((p) =>
     (kind === "any" || p.kind === kind) &&
     (beds === 0 || (p.beds ?? 0) >= beds) &&
     (baths === 0 || p.baths >= baths) &&
     monthly(p) >= min && monthly(p) <= max,
-  ), [market, kind, beds, baths, min, max]);
+  ), [kind, beds, baths, min, max]);
+  const shown = useMemo(
+    () => others.filter((p) => market === "all" || p.market === market),
+    [others, market]);
 
   /* The distribution behind the handles, as Airbnb draws it. */
   const bars = useMemo(() => {
@@ -186,14 +190,20 @@ export function Properties({ initial }: { initial: Market | "all" }) {
           Placeholder listings — this page is a template. None of the properties
           below are real or available.
         </p>
+        <ul className="pr-key">
+          {([["disc", "Long let"], ["ring", "Flagship"], ["diamond", "Short stay"]] as const)
+            .map(([k, label]) => (
+              <li key={k}><span className="pr-stop" data-kind={k} aria-hidden="true" />{label}</li>
+            ))}
+        </ul>
         <div className="pr-filter" role="group" aria-label="Filter by market">
           <button type="button" data-on={market === "all"} onClick={() => setMarket("all")}>
-            All<span>{PROPERTIES.length}</span>
+            All<span>{others.length}</span>
           </button>
           {MARKETS.map((mk) => (
             <button key={mk.code} type="button" data-on={market === mk.code}
               style={{ ["--c" as string]: mk.colour }} onClick={() => setMarket(mk.code)}>
-              {mk.name}<span>{PROPERTIES.filter((p) => p.market === mk.code).length}</span>
+              {mk.name}<span>{others.filter((p) => p.market === mk.code).length}</span>
             </button>
           ))}
           <button type="button" className="pr-more" onClick={() => setPanel(true)}
@@ -308,16 +318,37 @@ export function Properties({ initial }: { initial: Market | "all" }) {
             <li key={p.id} id={`row-${p.id}`} data-on={sel === p.id}
               style={{ ["--c" as string]: MARKETS.find((x) => x.code === p.market)!.colour }}
               onMouseEnter={() => setSel(p.id)} onFocus={() => setSel(p.id)}>
-              {/* Selects rather than navigates. Detail pages arrive with real
-                  inventory; until then a link here would be twelve 404s. */}
-              <button type="button" onClick={() => setSel(p.id)}>
+              {/* Opens in place rather than navigating. A detail page needs
+                  real inventory behind it, and a link here would be twelve
+                  404s — but the arrow was promising something and delivering a
+                  faint tint, at exactly the moment someone is ready to act. */}
+              <button type="button" aria-expanded={open === p.id}
+                aria-controls={`d-${p.id}`}
+                onClick={() => { setSel(p.id); setOpen(open === p.id ? null : p.id); }}>
                 <span className="pr-stop" data-kind={shapeOf(p.kind)} aria-hidden="true" />
                 <span className="pr-name">{p.name}</span>
                 <span className="pr-city">{p.city}</span>
                 <span className="pr-spec">{summary(p)}</span>
                 <span className="pr-price">{priceOf(p)}</span>
-                <Arrow dir="right" size={19} />
+                <Arrow dir={open === p.id ? "down" : "right"} size={19} />
               </button>
+              {open === p.id && (
+                <div className="pr-detail" id={`d-${p.id}`}>
+                  {/* Named for what it is. A grey rectangle pretending to be a
+                      photograph is worse than an empty frame that says so. */}
+                  <div className="pr-shot" aria-hidden="true"><span>Photography to come</span></div>
+                  <dl className="pr-facts">
+                    <div><dt>Market</dt><dd>{MARKETS.find((x) => x.code === p.market)!.name}</dd></div>
+                    <div><dt>Letting</dt>
+                      <dd>{LETTING.find((l) => l.key === p.kind)?.label ?? p.kind}</dd></div>
+                    <div><dt>Rooms</dt><dd>{summary(p)}</dd></div>
+                    <div><dt>Rate</dt><dd>{priceOf(p)}</dd></div>
+                  </dl>
+                  <button type="button" className="pr-ask" onClick={() => setView("contact")}>
+                    Enquire about {p.name} <Arrow dir="right" size={17} />
+                  </button>
+                </div>
+              )}
             </li>
           ))}
         </ol>

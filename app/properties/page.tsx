@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Properties } from "@/components/Properties";
+import { ContactModal } from "@/components/ContactModal";
 import type { Market } from "@/lib/properties";
 
 export const metadata: Metadata = {
@@ -17,5 +18,7 @@ export default async function Page(
   /* The region plates on the landing link here with ?market=ca|us|eu. */
   const initial = (OK as readonly string[]).includes(market ?? "")
     ? (market as Market) : "all";
-  return <main><Properties initial={initial} /></main>;
+  /* The enquiry path used to exist only at the foot of the landing, so the
+     one screen where someone has picked a property had no way to say so. */
+  return <><main><Properties initial={initial} /></main><ContactModal /></>;
 }

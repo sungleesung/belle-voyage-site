@@ -9,12 +9,6 @@ export default function Page() {
     <Scroll>
       <Masthead />
       <main>
-        {/* The page has no visible heading by design — the line is the whole
-            statement. This is the one a crawler and a screen reader need. */}
-        <h1 className="sr">
-          Belle Voyage Estates — sales, letting and management across Canada,
-          the United States and Europe
-        </h1>
         <Line />
         <Contact />
       </main>

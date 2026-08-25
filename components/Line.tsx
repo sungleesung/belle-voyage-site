@@ -55,6 +55,10 @@ export function Line() {
   /* The panel's own offset inside the anchor. Constant until layout changes,
      and read there rather than per frame. */
   const aboutTop = useRef(60);
+  /* Where the wipe edge has to reach before the masthead is standing on white.
+     A function of the viewport, so it is recomputed with the frame. */
+  const mhCross = useRef(2.31);
+  const gutter = useRef(20);
   /* Set while the intro owns the camera, so a resize re-derives it. Null after
      the intro hands over, because then the scroll owns the camera. */
   const reframe = useRef<(() => void) | null>(null);
@@ -70,6 +74,17 @@ export function Line() {
   const fit = () => {
     const panel = anchor.current?.querySelector<HTMLElement>(".ln-about");
     if (panel) aboutTop.current = panel.offsetTop;
+    /* The sheet clips downward from the top over timeline 2.1 -> 3.0 on
+       power2.inOut, so the masthead is covered before anything else is. Invert
+       the ease at the fraction of the viewport the mark's underside sits at:
+       for r < 0.5, power2.inOut is 2t², so t = sqrt(r / 2). */
+    gutter.current = parseFloat(
+      getComputedStyle(document.documentElement).getPropertyValue("--pad")) || 20;
+    const mh = document.querySelector<HTMLElement>(".mh");
+    if (mh) {
+      const r = Math.min(0.5, mh.getBoundingClientRect().bottom / window.innerHeight);
+      mhCross.current = 2.1 + 0.9 * Math.sqrt(r / 2);
+    }
     const el = svg.current; if (!el) return;
     const r = el.getBoundingClientRect();
     size.current = { w: r.width, h: r.height };
@@ -181,7 +196,10 @@ export function Line() {
         }
       };
       const intro = { u: seen ? 1 : LEAD / IL };
-      if (seen) settle();
+      /* The intro is what raises the statement, and a second visit in the same
+         session never runs it — so without this the sentence is authored,
+         rendered, and permanently invisible for everyone who comes back. */
+      if (seen) { settle(); gsap.set(".ln-say", { opacity: 1, y: 0 }); }
       const runIntro = () => {
         const P = ip.getPointAtLength(intro.u * IL);
         const a = smooth(1 - SLIDE_FROM / IL, 1 - SLIDE_TO / IL, intro.u);
@@ -222,6 +240,8 @@ export function Line() {
           .to(intro, { u: 1, duration: 1.95, ease: "power2.inOut", onUpdate: runIntro }, 1.10)
           .fromTo(".ln-stop", { opacity: 0 },
             { opacity: 1, duration: 0.55, stagger: 0.1, ease: "power2.out" }, 2.45)
+          .fromTo(".ln-say", { opacity: 0, y: 14 },
+            { opacity: 1, y: 0, duration: 0.6, ease: "power2.out" }, 2.6)
           /* The stops passed on the way down belong to the descent, so they go
              out with it — landing exactly when the camera stops, rather than
              being cut a frame later when settle() swaps the path out. */
@@ -270,21 +290,43 @@ export function Line() {
         el.style.setProperty("--atx", `${ax}px`);
         el.style.setProperty("--aty", `${ay}px`);
         /* What is actually left of the frame from where the panel starts. Both
-           are arithmetic on numbers already in hand — no layout read. */
-        const edge = 18;
+           are arithmetic on numbers already in hand — no layout read. The
+           margin is the page's own gutter, read once per fit rather than
+           typed: an 18 here matched --pad at no viewport it ever ran at. */
+        const edge = gutter.current;
         el.style.setProperty("--aw",
           `${Math.max(240, window.innerWidth - ax - edge)}px`);
         el.style.setProperty("--ah",
           `${Math.max(150, window.innerHeight - ay - aboutTop.current - edge)}px`);
       };
+      /* The masthead carries its own ground now, and that ground matches the
+         page's so the panel is invisible at rest. Two facts decide which:
+         whether the wipe has reached the mark, and whether the black contact
+         sheet has risen over it. Contrast never depends on getting this right
+         — the ink is always on the panel, at 21:1 — so the worst a mistake
+         costs is a visible edge for a moment. That is the whole point of
+         painting a ground instead of blending against one. */
+      const dark = () => document.querySelector<HTMLElement>(".ct");
+      let ct: HTMLElement | null = null;
+      let clock: gsap.core.Timeline | null = null;
+      const paint = () => {
+        ct = ct?.isConnected ? ct : dark();
+        const mh = document.querySelector<HTMLElement>(".mh");
+        const covered = ct && mh
+          ? ct.getBoundingClientRect().top <= mh.getBoundingClientRect().bottom
+          : false;
+        document.documentElement.classList.toggle(
+          "mh-light", (clock?.time() ?? 0) >= mhCross.current && !covered);
+      };
       const render = () => {
         const c = cameraAt(s.p, capped.current);
         put(c.x + away.x, c.y + away.y);
         carry(c.x + away.x, c.y + away.y);
+        paint();
       };
       const move = () => { if (!landed) return; render(); };
 
-      const tl = gsap.timeline({
+      const tl: gsap.core.Timeline = gsap.timeline({
         scrollTrigger: {
           trigger: root.current!, start: "top top", end: "+=280%",
           pin: true, scrub: 0.35, invalidateOnRefresh: true,
@@ -506,7 +548,11 @@ export function Line() {
           easing: (x: number) => 1 - Math.pow(1 - x, 3),
         });
       };
+      tl.to(".ln-say", { opacity: 0, duration: 0.3, ease: "power1.out" }, 0.06);
+
+      clock = tl;
       const onScroll = () => {
+        paint();
         const y = window.scrollY;
         if (y !== lastY) { dir = y > lastY ? 1 : -1; lastY = y; }
         clearTimeout(idle); idle = setTimeout(settleScroll, 180);
@@ -537,6 +583,7 @@ export function Line() {
         removeEventListener("touchstart", onDown);
         removeEventListener("touchend", onUp);
         removeEventListener("touchcancel", onUp);
+        document.documentElement.classList.remove("mh-light");
       };
 
       tl.to(s, { p: 1, duration: 10, ease: "none", onUpdate: move, immediateRender: false }, 0)
@@ -609,6 +656,17 @@ export function Line() {
     <div className="ln" ref={root}>
       <div className="ln-bg" />
       <div className="ln-sheet" ref={sheet} />
+      {/* Lives inside .ln, not beside it: the GSAP context scopes every
+          selector string to this element, so a heading rendered as a sibling
+          in page.tsx was authored, rendered, and never animated — it simply
+          stayed at the opacity the stylesheet gave it. It used to be clipped
+          to a 1x1 pixel, which left the homepage with two visible paragraphs,
+          both in the footer. The line can be the statement and still not be
+          the sentence. */}
+      <h1 className="ln-say">
+        Sales, letting and management across
+        {" "}<b>Canada</b>, the <b>United States</b> and <b>Europe</b>
+      </h1>
       {/* Not a landmark: every link inside is aria-hidden, so a nav role here
           announces as an empty navigation. The real one is .ln-fallback. */}
       <svg ref={svg} className="ln-svg" viewBox="0 0 1000 700"
