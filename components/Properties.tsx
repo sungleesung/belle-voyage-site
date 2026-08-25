@@ -108,8 +108,11 @@ export function Properties({ initial }: { initial: Market | "all" }) {
     return out.map((c, i) => ({ h: c / peak, on: floor + ((i + 0.5) / n) * (ceil - floor) }));
   }, [floor, ceil]);
 
+  /* The price counts as a filter when it actually narrows anything, not when
+     it has merely been touched. Dragging a handle out and back left the badge
+     claiming one filter was on while the range excluded nothing. */
   const active = (kind !== "any" ? 1 : 0) + (beds ? 1 : 0) + (baths ? 1 : 0) +
-    (lo !== null || hi !== null ? 1 : 0);
+    (min > floor || max < ceil ? 1 : 0);
   const clear = () => { setKind("any"); setBeds(0); setBaths(0); setLo(null); setHi(null); };
 
   useEffect(() => {
