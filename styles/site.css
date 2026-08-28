@@ -825,21 +825,28 @@ html.menu-open, html.menu-open body{overflow:hidden;}
 [data-ride] .pr-body{border-top-color:var(--us);}
 /* Keyed to the clear phase. The page mounts while the field still covers it,
    so anything keyed to the ride as a whole plays to nobody. */
+/* --e-arrive puts 92% of its travel into the first third, so the field is
+   effectively gone by ~300ms. The stagger used to start at 300 and run to 940,
+   which left the list column empty for a beat after the field had passed it.
+   It starts as the field lifts and is done before it has finished leaving. */
 [data-ride="clear"] .pr-head > *, [data-ride="clear"] .pr-key,
 [data-ride="clear"] .pr-filter{animation:ride-row var(--t-2) var(--e-arrive) backwards;}
-[data-ride="clear"] .pr-head > *:nth-child(2){animation-delay:60ms;}
-[data-ride="clear"] .pr-head > *:nth-child(3){animation-delay:120ms;}
-[data-ride="clear"] .pr-key{animation-delay:180ms;}
-[data-ride="clear"] .pr-filter{animation-delay:240ms;}
-/* Capped at seven concurrent, per the voice cap the motion system borrows. */
-[data-ride="clear"] .pr-list li{animation:ride-row var(--t-2) var(--e-arrive) backwards;}
-[data-ride="clear"] .pr-list li:nth-child(1){animation-delay:300ms;}
-[data-ride="clear"] .pr-list li:nth-child(2){animation-delay:340ms;}
-[data-ride="clear"] .pr-list li:nth-child(3){animation-delay:380ms;}
-[data-ride="clear"] .pr-list li:nth-child(4){animation-delay:420ms;}
-[data-ride="clear"] .pr-list li:nth-child(5){animation-delay:460ms;}
-[data-ride="clear"] .pr-list li:nth-child(6){animation-delay:500ms;}
-[data-ride="clear"] .pr-list li:nth-child(7){animation-delay:540ms;}
+[data-ride="clear"] .pr-head > *:nth-child(2){animation-delay:40ms;}
+[data-ride="clear"] .pr-head > *:nth-child(3){animation-delay:80ms;}
+[data-ride="clear"] .pr-key{animation-delay:40ms;}
+[data-ride="clear"] .pr-filter{animation-delay:80ms;}
+/* Capped at seven concurrent, per the voice cap the motion system borrows —
+   and scoped to seven, because every row past the seventh had no delay at all
+   and arrived ahead of the ones above it. */
+[data-ride="clear"] .pr-list li:nth-child(-n+7){
+  animation:ride-row var(--t-2) var(--e-arrive) backwards;}
+[data-ride="clear"] .pr-list li:nth-child(1){animation-delay:120ms;}
+[data-ride="clear"] .pr-list li:nth-child(2){animation-delay:160ms;}
+[data-ride="clear"] .pr-list li:nth-child(3){animation-delay:200ms;}
+[data-ride="clear"] .pr-list li:nth-child(4){animation-delay:240ms;}
+[data-ride="clear"] .pr-list li:nth-child(5){animation-delay:280ms;}
+[data-ride="clear"] .pr-list li:nth-child(6){animation-delay:320ms;}
+[data-ride="clear"] .pr-list li:nth-child(7){animation-delay:360ms;}
 @keyframes ride-row{from{opacity:0; transform:translateY(12px);} to{opacity:1; transform:none;}}
 
 @media(prefers-reduced-motion:reduce){

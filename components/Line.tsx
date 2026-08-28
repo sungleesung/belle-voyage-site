@@ -386,7 +386,6 @@ export function Line() {
 
       let trip = 0;
       let wanted = false;
-      let warmed: HTMLLinkElement | null = null;
       const arrive = () => {
         contain(true);
         render();
@@ -420,7 +419,6 @@ export function Line() {
         trip++;                      // cancels an arrival still on its way
         gsap.killTweensOf(away);     // and stops a departure mid-flight
         cancelRide();                // and calls the field back
-        warmed?.remove(); warmed = null;   // a cancelled trip warms nothing
         gsap.to(".ln-say", { opacity: (tl.time() >= 0.36 ? 0 : 1), duration: 0.5,
           ease: "power1.out", delay: 0.4 });
         gsap.to(away, { x: 0, y: 0, duration: 1, ease: "power2.inOut", onUpdate: render,
@@ -441,12 +439,6 @@ export function Line() {
         away.live = true;
         contain(true);
         getLenis()?.stop();
-        /* Warmed while the camera travels, so the end of the line is the page
-           rather than a white flash. */
-        const pre = document.createElement("link");
-        pre.rel = "prefetch"; pre.href = "/properties";
-        document.head.appendChild(pre);
-        warmed = pre;
         ++trip;
         /* The camera and the field run together for one beat: the camera
            accelerating north up the branch, the field arriving from ahead.

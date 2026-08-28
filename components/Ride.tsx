@@ -3,10 +3,6 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { onRide, setNavigator, arriveOnly, getRide, type Ride as R } from "@/lib/ride";
 
-const reduced = () =>
-  typeof window !== "undefined" &&
-  matchMedia("(prefers-reduced-motion: reduce)").matches;
-
 /* The field that owns the screen while a route swaps.
 
    Mounted in the layout, so it is the one thing that survives the swap — the
@@ -31,10 +27,7 @@ export function Ride() {
   }, [router]);
 
   useEffect(() => {
-    const onPop = () => {
-      if (reduced() || getRide()) return;
-      arriveOnly("back", location.pathname);
-    };
+    const onPop = () => { if (!getRide()) arriveOnly(location.pathname); };
     addEventListener("popstate", onPop);
     return () => removeEventListener("popstate", onPop);
   }, []);
@@ -46,7 +39,17 @@ export function Ride() {
   useEffect(() => {
     const el = document.documentElement;
     if (ride) el.dataset.ride = ride.phase; else delete el.dataset.ride;
-    return () => { delete el.dataset.ride; };
+    /* The field stops the mouse but not the Tab key: on the return leg nothing
+       else is inert, and Tab walked straight through a covered page onto rows
+       that could then be activated under a black screen. */
+    const main = document.querySelector<HTMLElement>("main");
+    if (main) main.inert = !!ride;
+    /* And focus has to land somewhere on arrival rather than on <body>. The
+       attribute stays: taking it off in the same tick hands focus straight
+       back to the body, and -1 keeps it out of the tab order anyway. */
+    if (main) main.setAttribute("tabindex", "-1");
+    if (!ride && main) main.focus({ preventScroll: true });
+    return () => { delete el.dataset.ride; if (main) main.inert = false; };
   }, [ride]);
 
   if (!ride) return null;
