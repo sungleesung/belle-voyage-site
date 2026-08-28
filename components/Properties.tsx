@@ -9,6 +9,7 @@ import { Map as MLMap, Marker, LngLatBounds, setWorkerUrl } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { Arrow } from "./Arrow";
 import { setView } from "@/lib/overlay";
+import { startRide } from "@/lib/ride";
 import { MARKETS, PROPERTIES, monthly, priceOf, shapeOf, summary,
   type Kind, type Market, type Property } from "@/lib/properties";
 
@@ -183,7 +184,14 @@ export function Properties({ initial }: { initial: Market | "all" }) {
       <header className="pr-head">
         {/* The masthead belongs to the landing, where it inverts against a
             moving drawing. Here the mark is simply the way back. */}
-        <a className="pr-home" href="/">
+        {/* Still an anchor: a middle-click, a new tab and a copied link all
+            have to keep working. The ride only claims a plain left click. */}
+        <a className="pr-home" href="/"
+          onClick={(e) => {
+            if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
+            e.preventDefault();
+            startRide("back", "/");
+          }}>
           Belle&nbsp;V<i className="ring" aria-hidden="true">
             <svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="38.3" fill="none"
               stroke="currentColor" strokeWidth="23.4" /></svg></i>yage&nbsp;Estates

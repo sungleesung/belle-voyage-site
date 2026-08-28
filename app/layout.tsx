@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "@/styles/global.css";
 import "@/styles/site.css";
+import { Ride } from "@/components/Ride";
 
 export const metadata: Metadata = {
   title: "Belle Voyage Estates",
@@ -27,6 +28,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <noscript><style>{`.ln-svg{opacity:1!important}`}</style></noscript>
         <script dangerouslySetInnerHTML={{ __html: BOOT }} />
         {children}
+        {/* Outside both pages, so it is the one thing that survives the swap. */}
+        <Ride />
       </body>
     </html>
   );

@@ -19,6 +19,7 @@ const ABOUT_COPY = [
   "We strive to offer the best possible service to both our clients and their customers.",
 ];
 import { getView, onView, openContact, setView } from "@/lib/overlay";
+import { startRide, cancelRide } from "@/lib/ride";
 
 /* Positioning the camera must happen before the browser paints, or the first
    frame is the landing. useLayoutEffect does; useEffect does not. */
@@ -87,7 +88,8 @@ export function Line() {
     const box = mh.getBoundingClientRect();
     let lit = false;
     for (const el of document.elementsFromPoint(box.left + box.width / 2, box.bottom + 6)) {
-      if (el.closest(".mh")) continue;
+      /* The mark's own layers, and the ride field passing over everything. */
+      if (el.closest(".mh") || el.classList.contains("ride")) continue;
       const c = el.classList;
       if (c.contains("ln-gulp") || c.contains("ln-bg")) break;
       if (c.contains("ln-sheet") || el.closest(".ln-fallback")) { lit = true; break; }
@@ -417,6 +419,7 @@ export function Line() {
         if (!away.live) return;
         trip++;                      // cancels an arrival still on its way
         gsap.killTweensOf(away);     // and stops a departure mid-flight
+        cancelRide();                // and calls the field back
         warmed?.remove(); warmed = null;   // a cancelled trip warms nothing
         gsap.to(".ln-say", { opacity: (tl.time() >= 0.36 ? 0 : 1), duration: 0.5,
           ease: "power1.out", delay: 0.4 });
@@ -444,13 +447,15 @@ export function Line() {
         pre.rel = "prefetch"; pre.href = "/properties";
         document.head.appendChild(pre);
         warmed = pre;
-        const token = ++trip;
-        gsap.to(away, { x: PROPS_CAM.x, y: PROPS_CAM.y, duration: 0.95,
+        ++trip;
+        /* The camera and the field run together for one beat: the camera
+           accelerating north up the branch, the field arriving from ahead.
+           The route swaps underneath the field, so this no longer navigates —
+           location.href was a full reload, and nothing survives one. */
+        startRide("out", "/properties");
+        gsap.to(away, { x: PROPS_CAM.x, y: PROPS_CAM.y, duration: 0.8,
           ease: "power2.in", onUpdate: render,
-          /* Escape bumps the token. Without this the camera visibly turned
-             back and the page navigated anyway — the user cancelled and went
-             regardless. */
-          onComplete: () => { if (token === trip) location.href = "/properties"; } });
+        });
       };
 
       const onAboutClick = (e: MouseEvent) => {

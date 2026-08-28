@@ -784,3 +784,66 @@ html.menu-open, html.menu-open body{overflow:hidden;}
   .cm::backdrop{background:var(--paper);}
   .fl::backdrop{background:color-mix(in srgb, var(--ink) 72%, var(--paper));}
 }
+
+/* ── the ride ──────────────────────────────────────────────────
+   The field that owns the screen while a route swaps. Black with a green
+   leading edge: the swallow the landing already ends with, not a second
+   idiom — the line grows until it has eaten the frame, and the colour it was
+   stays on the edge that ate it.
+
+   One direction of travel for the whole trip. Going out the camera runs north
+   up the branch, so the world slides down and the field arrives from above,
+   passes over, and leaves below; the swap happens underneath it and it is
+   never reversed. Coming back it runs the other way. */
+.ride{--ride-cover:500ms; --ride-clear:700ms; position:fixed; inset:0; z-index:200; background:#000; pointer-events:auto;}
+/* Green on both edges, because the field is the line seen from inside it: one
+   edge leads on the way in, the other trails on the way out. With a single
+   edge the green was only ever visible while the screen was being covered —
+   during the reveal it sat a full viewport below the fold. */
+.ride::before, .ride::after{content:""; position:absolute; left:0; right:0;
+  height:clamp(10px,1.4vh,18px); background:var(--us);}
+.ride::before{top:0;}
+.ride::after{bottom:0;}
+
+/* forwards, never both — a retained transform makes the element a containing
+   block for every fixed descendant beneath it. */
+.ride[data-dir="out"][data-phase="cover"]{animation:ride-out-in var(--ride-cover) var(--e-line) forwards;}
+.ride[data-dir="out"][data-phase="clear"]{animation:ride-out-go var(--ride-clear) var(--e-arrive) forwards;}
+.ride[data-dir="back"][data-phase="cover"]{animation:ride-back-in var(--ride-cover) var(--e-line) forwards;}
+.ride[data-dir="back"][data-phase="clear"]{animation:ride-back-go var(--ride-clear) var(--e-arrive) forwards;}
+@keyframes ride-out-in{from{transform:translateY(-100%);} to{transform:translateY(0);}}
+@keyframes ride-out-go{from{transform:translateY(0);} to{transform:translateY(100%);}}
+@keyframes ride-back-in{from{transform:translateY(100%);} to{transform:translateY(0);}}
+@keyframes ride-back-go{from{transform:translateY(0);} to{transform:translateY(-100%);}}
+
+/* The arrival. The rule between the header and the list is green while the
+   field is still leaving and settles to its own colour once it has gone — the
+   line handing its colour to the page's furniture on the way past. The
+   transition lives on the element rather than the class, so losing the class
+   is what plays it. */
+.pr-body{transition:border-top-color var(--t-1) var(--e-line);}
+[data-ride] .pr-body{border-top-color:var(--us);}
+/* Keyed to the clear phase. The page mounts while the field still covers it,
+   so anything keyed to the ride as a whole plays to nobody. */
+[data-ride="clear"] .pr-head > *, [data-ride="clear"] .pr-key,
+[data-ride="clear"] .pr-filter{animation:ride-row var(--t-2) var(--e-arrive) backwards;}
+[data-ride="clear"] .pr-head > *:nth-child(2){animation-delay:60ms;}
+[data-ride="clear"] .pr-head > *:nth-child(3){animation-delay:120ms;}
+[data-ride="clear"] .pr-key{animation-delay:180ms;}
+[data-ride="clear"] .pr-filter{animation-delay:240ms;}
+/* Capped at seven concurrent, per the voice cap the motion system borrows. */
+[data-ride="clear"] .pr-list li{animation:ride-row var(--t-2) var(--e-arrive) backwards;}
+[data-ride="clear"] .pr-list li:nth-child(1){animation-delay:300ms;}
+[data-ride="clear"] .pr-list li:nth-child(2){animation-delay:340ms;}
+[data-ride="clear"] .pr-list li:nth-child(3){animation-delay:380ms;}
+[data-ride="clear"] .pr-list li:nth-child(4){animation-delay:420ms;}
+[data-ride="clear"] .pr-list li:nth-child(5){animation-delay:460ms;}
+[data-ride="clear"] .pr-list li:nth-child(6){animation-delay:500ms;}
+[data-ride="clear"] .pr-list li:nth-child(7){animation-delay:540ms;}
+@keyframes ride-row{from{opacity:0; transform:translateY(12px);} to{opacity:1; transform:none;}}
+
+@media(prefers-reduced-motion:reduce){
+  .ride{display:none;}
+  [data-ride] .pr-head > *, [data-ride] .pr-key, [data-ride] .pr-filter,
+  [data-ride] .pr-list li{animation:none;}
+}
