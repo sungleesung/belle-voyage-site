@@ -3,10 +3,31 @@ import "@/styles/global.css";
 import "@/styles/site.css";
 import { Ride } from "@/components/Ride";
 
+const DESC =
+  "Sales, letting and management across Canada, the United States and Europe. " +
+  "Square metres in Berlin, square feet in Detroit.";
+
+/* A link to this site pasted into a message rendered as a bare grey URL —
+   there was no metadataBase, no canonical and no Open Graph at all, on a
+   business that travels by referral. The title carries the city and the trade
+   too; "Belle Voyage Estates" alone is unfindable for anyone who does not
+   already know the name. */
 export const metadata: Metadata = {
-  title: "Belle Voyage Estates",
-  description:
-    "Sales, letting and management across Canada, the United States and Europe. Square metres in Berlin, square feet in Detroit.",
+  metadataBase: new URL("https://www.bellevoyageestates.com"),
+  title: {
+    default: "Belle Voyage Estates — property management, Windsor Ontario",
+    template: "%s · Belle Voyage Estates",
+  },
+  description: DESC,
+  alternates: { canonical: "/" },
+  openGraph: {
+    type: "website",
+    siteName: "Belle Voyage Estates",
+    title: "Belle Voyage Estates — property management, Windsor Ontario",
+    description: DESC,
+    url: "/",
+  },
+  twitter: { card: "summary_large_image", title: "Belle Voyage Estates", description: DESC },
 };
 export const viewport: Viewport = {
   width: "device-width",

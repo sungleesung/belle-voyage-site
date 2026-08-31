@@ -3,7 +3,9 @@ import { MARKETS } from "@/lib/properties";
 
 /* sitemap.xml for crawlers. The human-readable one lives at /sitemap; the two
    are different files and different routes, and both are wanted. */
-const BASE = "https://bellevoyageestates.com";
+/* www, not the apex: the apex 308s, so every URL we handed a crawler
+   was a redirect to the one we actually serve. */
+const BASE = "https://www.bellevoyageestates.com";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const at = new Date("2026-08-21");
