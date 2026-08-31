@@ -8,7 +8,7 @@ import { Map as MLMap, Marker, LngLatBounds, setWorkerUrl } from "maplibre-gl";
    overridden in site.css. */
 import "maplibre-gl/dist/maplibre-gl.css";
 import { Arrow } from "./Arrow";
-import { setView } from "@/lib/overlay";
+import { setView, openAbout } from "@/lib/overlay";
 import { startRide } from "@/lib/ride";
 import { MARKETS, PROPERTIES, monthly, priceOf, shapeOf, summary,
   type Kind, type Market, type Property } from "@/lib/properties";
@@ -75,6 +75,7 @@ export function Properties({ initial }: { initial: Market | "all" }) {
   const dlg = useRef<HTMLDialogElement>(null);
   const [sel, setSel] = useState<string | null>(null);
   const [open, setOpen] = useState<string | null>(null);
+  const from = useRef<"map" | "list">("list");
   const [ready, setReady] = useState(false);
   const host = useRef<HTMLDivElement>(null);
   const map = useRef<InstanceType<typeof MLMap> | null>(null);
@@ -161,7 +162,7 @@ export function Properties({ initial }: { initial: Market | "all" }) {
       const colour = MARKETS.find((x) => x.code === p.market)!.colour;
       const el = glyph(shapeOf(p.kind), colour);
       el.setAttribute("aria-label", `${p.name}, ${p.city}`);
-      el.addEventListener("click", () => setSel(p.id));
+      el.addEventListener("click", () => { from.current = "map"; setSel(p.id); });
       pins.current.set(p.id, new Marker({ element: el }).setLngLat(p.at).addTo(m));
     });
     if (!shown.length) return;
@@ -175,7 +176,11 @@ export function Properties({ initial }: { initial: Market | "all" }) {
   useEffect(() => {
     pins.current.forEach((pin, id) =>
       pin.getElement().classList.toggle("on", id === sel));
-    if (!sel) return;
+    /* Only when the selection came from the map. Hovering also sets sel, and
+       scrolling the hovered row into view moved the list out from under the
+       pointer: with a row open at scrollTop 120, hovering its neighbour jumped
+       to 225 and hovering back jumped to 133. */
+    if (!sel || from.current !== "map") return;
     document.getElementById(`row-${sel}`)?.scrollIntoView({ block: "nearest" });
   }, [sel]);
 
@@ -328,7 +333,8 @@ export function Properties({ initial }: { initial: Market | "all" }) {
           {shown.map((p: Property) => (
             <li key={p.id} id={`row-${p.id}`} data-on={sel === p.id}
               style={{ ["--c" as string]: MARKETS.find((x) => x.code === p.market)!.colour }}
-              onMouseEnter={() => setSel(p.id)} onFocus={() => setSel(p.id)}>
+              onMouseEnter={() => { from.current = "list"; setSel(p.id); }}
+              onFocus={() => { from.current = "list"; setSel(p.id); }}>
               {/* Opens in place rather than navigating. A detail page needs
                   real inventory behind it, and a link here would be twelve
                   404s — but the arrow was promising something and delivering a
@@ -345,6 +351,13 @@ export function Properties({ initial }: { initial: Market | "all" }) {
               </button>
               {open === p.id && (
                 <div className="pr-detail" id={`d-${p.id}`}>
+                  {/* The notice travels with what it disclaims. Sticky at the
+                      top of the column could not help: a sticky element cannot
+                      escape its parent, and on a phone .pr-head scrolls away
+                      and takes it along — measured 1,567px above the fold with
+                      a row open. Four addresses, four prices and an Enquire
+                      button, and nothing on screen saying it is fiction. */}
+                  <p className="pr-flag">Not a real listing — this page is a template.</p>
                   {/* Named for what it is. A grey rectangle pretending to be a
                       photograph is worse than an empty frame that says so. */}
                   <div className="pr-shot" aria-hidden="true"><span>Photography to come</span></div>
@@ -355,7 +368,12 @@ export function Properties({ initial }: { initial: Market | "all" }) {
                     <div><dt>Rooms</dt><dd>{summary(p)}</dd></div>
                     <div><dt>Rate</dt><dd>{priceOf(p)}</dd></div>
                   </dl>
-                  <button type="button" className="pr-ask" onClick={() => setView("contact")}>
+                  {/* Carries the property. The button said "Enquire about
+                      Vieux-Montréal" and then opened a blank form — the one
+                      piece of information the visitor had just given us was
+                      thrown away between the click and the email. */}
+                  <button type="button" className="pr-ask"
+                    onClick={() => openAbout(`${p.name}, ${p.city}`)}>
                     Enquire about {p.name} <Arrow dir="right" size={17} />
                   </button>
                 </div>

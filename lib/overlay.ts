@@ -14,6 +14,7 @@ export const getView = () => view;
 
 export function setView(v: View) {
   if (v === view) return;
+  if (v !== "contact") about = null;
   view = v;
   subs.forEach((f) => f(v));
 }
@@ -21,6 +22,19 @@ export function setView(v: View) {
 export function onView(f: (v: View) => void) {
   subs.add(f);
   return () => { subs.delete(f); };
+}
+
+/* What the popup is about, when it was opened from a property. Kept beside the
+   view rather than inside it so `v === "contact"` keeps working everywhere. The
+   Enquire button used to say "Enquire about Vieux-Montréal" and then open a
+   blank form, so the one thing the visitor had told us never reached the
+   email. */
+let about: string | null = null;
+export const getAbout = () => about;
+
+export function openAbout(subject: string) {
+  about = subject;
+  setView("contact");
 }
 
 /* Contact is a stop, not a page. Used by the stop on the line and by the menu. */

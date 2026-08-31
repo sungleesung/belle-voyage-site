@@ -486,7 +486,7 @@ html.menu-open, html.menu-open body{overflow:hidden;}
    starts on the same edge as the h1 and the filter bullets rather than 17px
    inside them. */
 .pr-note{margin:0 0 0 -20px; font-size:16px; letter-spacing:.02em; line-height:1.45;
-  color:var(--ink); background:var(--ca-wash); border-left:4px solid var(--ca);
+  color:var(--ink); background:var(--panel); border-left:4px solid var(--rule-strong);
   padding:8px 16px; justify-self:start; max-width:62ch;}
 
 /* The shapes carry letting type and nothing said which was which — a notation
@@ -512,12 +512,12 @@ html.menu-open, html.menu-open body{overflow:hidden;}
   min-height:0; border-top:1px solid var(--rule);}
 .pr-list{margin:0; padding:0; list-style:none; overflow-y:auto; min-height:0;}
 .pr-list li{--c:var(--muted); border-bottom:1px solid var(--rule);}
-.pr-list button{width:100%; text-align:left; font:inherit; color:inherit;
+.pr-list li > button{width:100%; text-align:left; font:inherit; color:inherit;
   background:none; border:0; cursor:pointer; display:grid; align-items:center; gap:2px 16px; padding:20px var(--pad);
   grid-template-columns:auto minmax(0,1fr) auto auto;
   grid-template-areas:"stop name city arrow" "stop spec price arrow";
   transition:background var(--t-4) var(--e-line);}
-.pr-list li[data-on="true"] button{background:var(--panel);}
+.pr-list li[data-on="true"] > button{background:var(--panel);}
 
 /* The station shapes the system already uses: hollow ring is a flagship,
    solid disc a standard letting, diamond a limited run — short stay. */
@@ -535,14 +535,21 @@ html.menu-open, html.menu-open body{overflow:hidden;}
 .pr-spec{grid-area:spec; font-size:var(--t-warn); color:var(--muted);}
 .pr-price{grid-area:price; font-weight:700; font-size:var(--t-warn);
   text-align:right; font-variant-numeric:tabular-nums;}
-.pr-list svg{grid-area:arrow; color:var(--muted);}
+.pr-list li > button svg{grid-area:arrow; color:var(--muted);}
 
 /* Opened in place. The arrow turns down because direction is semantic here —
    it now describes what the press actually does. */
 .pr-detail{display:grid; gap:16px; padding:4px var(--pad) 24px;
   border-top:1px solid var(--rule);}
-.pr-shot{display:grid; place-items:center; aspect-ratio:16/9; max-height:240px; background:var(--panel);
-  border:1px dashed var(--rule-strong); color:var(--muted);
+/* So focusing something inside the panel never parks it under the sticky
+   Enquire bar — the same reason .fl-panel carries one. */
+.pr-list{scroll-padding-block-end:92px;}
+/* Warning tier, hairline-bound, no icon — the manual's own register for a
+   notice, and it keeps the market colours out of it. */
+.pr-flag{margin:0; padding:8px 12px; font-size:var(--t-warn); letter-spacing:.02em;
+  color:var(--muted); border:1px solid var(--rule-strong); justify-self:start;}
+.pr-shot{display:grid; place-items:center; aspect-ratio:3/2; background:var(--panel);
+  border:1px solid var(--rule-strong); color:var(--muted);
   font-size:13px; letter-spacing:.14em; text-transform:uppercase;}
 .pr-facts{display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr));
   gap:16px; margin:0;}
@@ -550,7 +557,10 @@ html.menu-open, html.menu-open body{overflow:hidden;}
 .pr-facts dt{font-size:13px; letter-spacing:.14em; text-transform:uppercase;
   color:var(--muted);}
 .pr-facts dd{margin:0; font-weight:700; font-size:var(--t-body); letter-spacing:-.02em;}
-.pr-ask{justify-self:start; display:inline-flex; align-items:center; gap:8px;
+.pr-ask{position:sticky; bottom:0; z-index:1; justify-self:stretch;
+  margin:0 calc(var(--pad) * -1) -24px; padding:16px var(--pad);
+  background:var(--paper); border-top:1px solid var(--rule);
+  display:flex; align-items:center; gap:8px;
   min-height:44px; padding:0 20px; cursor:pointer; font:inherit; font-weight:700;
   font-size:var(--t-body); letter-spacing:-.02em; border-radius:var(--r-cap);
   border:2px solid var(--rule-strong); background:none; color:var(--ink);
@@ -577,6 +587,7 @@ html.menu-open, html.menu-open body{overflow:hidden;}
   .pr-list button{grid-template-columns:auto minmax(0,1fr) auto;
     grid-template-areas:"stop name arrow" "stop city arrow" "stop spec price";}
   .pr-city{text-align:left;}
+  .pr-note{margin-left:0;}
 }
 @media(prefers-reduced-motion:reduce){ .pr-pin{transition:none;} }
 

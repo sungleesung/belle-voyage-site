@@ -10,7 +10,7 @@ import { Arrow } from "./Arrow";
    It posts with fetch rather than navigating. A native submit sent the visitor
    to whatever the endpoint returned, which on a form like this means leaving
    the page to read a one-line answer. */
-export function EnquiryForm() {
+export function EnquiryForm({ about }: { about?: string | null }) {
   const [state, setState] = useState<"idle" | "sending" | "done">("idle");
   const [err, setErr] = useState<{ message: string; field?: string } | null>(null);
   const form = useRef<HTMLFormElement>(null);
@@ -108,7 +108,11 @@ export function EnquiryForm() {
       </div>
       <div className="ct-f">
         <label htmlFor={`${uid}-subject-f`}>Subject</label>
-        <input id={`${uid}-subject-f`} name="subject" type="text" {...at("subject")} required />
+        {/* Prefilled when the popup was opened from a property, so the thing
+            the visitor pressed the button about arrives with the message.
+            defaultValue, not value — it stays editable. */}
+        <input id={`${uid}-subject-f`} name="subject" type="text"
+          defaultValue={about ?? undefined} {...at("subject")} required />
         {err?.field === "subject" &&
           <em className="ct-fe" role="alert" id={`${uid}-subject`}>{err.message}</em>}
       </div>

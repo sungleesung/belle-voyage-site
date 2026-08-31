@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { EnquiryForm } from "./EnquiryForm";
-import { onView, setView } from "@/lib/overlay";
+import { onView, setView, getAbout } from "@/lib/overlay";
 
 export function ContactModal() {
   const [open, setOpen] = useState(false);
@@ -9,6 +9,7 @@ export function ContactModal() {
      confirmation was still on it the next time the popup opened. Keying the
      form to the opening gives each one a blank sheet. */
   const [opening, setOpening] = useState(0);
+  const [about, setAbout] = useState<string | null>(null);
   const dlg = useRef<HTMLDialogElement>(null);
 
   /* Whatever had focus when it opened, so closing returns there. */
@@ -18,6 +19,7 @@ export function ContactModal() {
     setOpen(v === "contact");
     if (v === "contact") {
       from.current = document.activeElement as HTMLElement | null;
+      setAbout(getAbout());
       setOpening((n) => n + 1);
     }
   }), []);
@@ -71,7 +73,7 @@ export function ContactModal() {
           </button>
           <div className="cm-panel">
             <h2 id="cm-title">Get in touch</h2>
-            <EnquiryForm key={opening} />
+            <EnquiryForm key={opening} about={about} />
           </div>
         </div>
       </div>
