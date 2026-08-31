@@ -548,7 +548,12 @@ html.menu-open, html.menu-open body{overflow:hidden;}
    notice, and it keeps the market colours out of it. */
 .pr-flag{margin:0; padding:8px 12px; font-size:var(--t-warn); letter-spacing:.02em;
   color:var(--muted); border:1px solid var(--rule-strong); justify-self:start;}
-.pr-shot{display:grid; place-items:center; aspect-ratio:3/2; background:var(--panel);
+/* 3:2 because interiors are, capped at the height this frame already had so
+   the ratio fix does not grow the panel. It leaves the frame narrower than its
+   column, which is a real question — but it is a question about a placeholder
+   for a placeholder, and not one to answer by making every row two screens
+   tall. */
+.pr-shot{display:grid; place-items:center; aspect-ratio:3/2; max-height:240px; background:var(--panel);
   border:1px solid var(--rule-strong); color:var(--muted);
   font-size:13px; letter-spacing:.14em; text-transform:uppercase;}
 .pr-facts{display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr));
@@ -557,10 +562,14 @@ html.menu-open, html.menu-open body{overflow:hidden;}
 .pr-facts dt{font-size:13px; letter-spacing:.14em; text-transform:uppercase;
   color:var(--muted);}
 .pr-facts dd{margin:0; font-weight:700; font-size:var(--t-body); letter-spacing:-.02em;}
-.pr-ask{position:sticky; bottom:0; z-index:1; justify-self:stretch;
-  margin:0 calc(var(--pad) * -1) -24px; padding:16px var(--pad);
-  background:var(--paper); border-top:1px solid var(--rule);
-  display:flex; align-items:center; gap:8px;
+/* The bar is sticky, the button is a button. Both were previously one
+   element, and the sticky declarations were prepended into a block that
+   already ended with its own padding, background and border — so the later
+   rules won and it shipped as a transparent pill bleeding into the gutters. */
+.pr-foot{position:sticky; bottom:0; z-index:1;
+  margin:0 calc(var(--pad) * -1) -24px; padding:12px var(--pad);
+  background:var(--paper); border-top:1px solid var(--rule);}
+.pr-ask{display:inline-flex; align-items:center; gap:8px;
   min-height:44px; padding:0 20px; cursor:pointer; font:inherit; font-weight:700;
   font-size:var(--t-body); letter-spacing:-.02em; border-radius:var(--r-cap);
   border:2px solid var(--rule-strong); background:none; color:var(--ink);

@@ -161,7 +161,6 @@ export function Properties({ initial }: { initial: Market | "all" }) {
     shown.forEach((p) => {
       const colour = MARKETS.find((x) => x.code === p.market)!.colour;
       const el = glyph(shapeOf(p.kind), colour);
-      el.setAttribute("aria-label", `${p.name}, ${p.city}`);
       el.addEventListener("click", () => { from.current = "map"; setSel(p.id); });
       pins.current.set(p.id, new Marker({ element: el }).setLngLat(p.at).addTo(m));
     });
@@ -372,10 +371,19 @@ export function Properties({ initial }: { initial: Market | "all" }) {
                       Vieux-Montréal" and then opened a blank form — the one
                       piece of information the visitor had just given us was
                       thrown away between the click and the email. */}
-                  <button type="button" className="pr-ask"
-                    onClick={() => openAbout(`${p.name}, ${p.city}`)}>
-                    Enquire about {p.name} <Arrow dir="right" size={17} />
-                  </button>
+                  {/* A bar carrying a button, the same shape as the filter
+                      modal's footer. Sticky styling was previously set on the
+                      button itself, prepended into a block that already ended
+                      with padding, background and border — so every one of the
+                      sticky declarations lost to the pill rules below it and
+                      what shipped was a transparent pill bleeding into both
+                      gutters with the list scrolling through it. */}
+                  <div className="pr-foot">
+                    <button type="button" className="pr-ask"
+                      onClick={() => openAbout(`${p.name}, ${p.city}`)}>
+                      Enquire about {p.name} <Arrow dir="right" size={17} />
+                    </button>
+                  </div>
                 </div>
               )}
             </li>
