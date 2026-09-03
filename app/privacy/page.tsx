@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Doc, CONTACT } from "@/components/Doc";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/privacy" },
   title: "Privacy policy — Belle Voyage Estates",
   description: "What this website does with information about you, described specifically rather than in general terms.",
 };

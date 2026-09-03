@@ -3,6 +3,7 @@ import { Doc, CONTACT } from "@/components/Doc";
 import { MARKETS } from "@/lib/properties";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/sitemap" },
   title: "Site map — Belle Voyage Estates",
   description: "Every page on the Belle Voyage Estates site, in one place.",
 };

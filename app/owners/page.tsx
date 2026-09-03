@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Doc, CONTACT } from "@/components/Doc";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/owners" },
   title: "For owners — Belle Voyage Estates",
   description: "Letting, short stay, management, compliance and development for property owners across Canada, the United States, the United Kingdom and Europe.",
 };

@@ -4,6 +4,7 @@ import { ContactModal } from "@/components/ContactModal";
 import type { Market } from "@/lib/properties";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/properties" },
   title: "Properties — Belle Voyage Estates",
   description:
     "Sales, letting and short stay across Canada, the United States and Europe.",

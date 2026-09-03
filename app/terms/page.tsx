@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Doc, CONTACT } from "@/components/Doc";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/terms" },
   title: "Terms of service — Belle Voyage Estates",
   description: "The terms covering use of this website, and what a listing is and is not.",
 };
